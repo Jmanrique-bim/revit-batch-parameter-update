@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.nupkg
+packages/
+*.pfx
+*.snk
+.env
+*.addin.user
