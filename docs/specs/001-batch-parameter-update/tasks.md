@@ -153,28 +153,28 @@ tests/BatchParamUpdate.Tests.Unit/          #   Domain/, Application/, Fakes/
 
 ### Tests for User Story 3
 
-- [ ] T055 [P] [US3] Unit test: a `ParameterCandidate.Name` appears once per `Binding` inside its set (deduplication) (`tests/BatchParamUpdate.Tests.Unit/Domain/ParameterCandidateSetTests.cs`, FR-007/FR-009)
-- [ ] T056 [P] [US3] Unit test: `SharedSearchQuery` filters both sets simultaneously by case-insensitive substring on `Definition.Name` (`tests/BatchParamUpdate.Tests.Unit/Domain/SharedSearchQueryTests.cs`, FR-011)
-- [ ] T057 [US3] Unit test: `DiscoverParametersUseCase` blocks advancing to the replacement step when no `TargetParameter` is chosen (`ERR-500-NO-PARAMETER-SELECTED`) (`tests/BatchParamUpdate.Tests.Unit/Application/DiscoverParametersUseCaseTests.cs`, FR-013)
-- [ ] T058 [US3] Unit test: choosing a candidate from `TypeParameterCandidateSet` sets `RequiresWideBlastRadiusWarning=true` without blocking advance (`tests/BatchParamUpdate.Tests.Unit/Application/DiscoverParametersUseCaseTests.cs`, FR-014, SC-010)
+- [X] T055 [P] [US3] Unit test: a `ParameterCandidate.Name` appears once per `Binding` inside its set (deduplication) (`tests/BatchParamUpdate.Tests.Unit/Domain/ParameterCandidateSetTests.cs`, FR-007/FR-009)
+- [X] T056 [P] [US3] Unit test: `SharedSearchQuery` filters both sets simultaneously by case-insensitive substring on `Definition.Name` (`tests/BatchParamUpdate.Tests.Unit/Domain/SharedSearchQueryTests.cs`, FR-011)
+- [X] T057 [US3] Unit test: `DiscoverParametersUseCase` blocks advancing to the replacement step when no `TargetParameter` is chosen (`ERR-500-NO-PARAMETER-SELECTED`) (`tests/BatchParamUpdate.Tests.Unit/Application/DiscoverParametersUseCaseTests.cs`, FR-013)
+- [X] T058 [US3] Unit test: choosing a candidate from `TypeParameterCandidateSet` sets `RequiresWideBlastRadiusWarning=true` without blocking advance (`tests/BatchParamUpdate.Tests.Unit/Application/DiscoverParametersUseCaseTests.cs`, FR-014, SC-010)
 
 ### Implementation for User Story 3
 
-- [ ] T059 [P] [US3] Create shared record `ParameterCandidate` (`src/BatchParamUpdate.Domain/Model/ParameterCandidate.cs`: `Name`, `Binding`, `SourceElementRefs`, data-model.md §2) (depends on T020, T021)
-- [ ] T060 [P] [US3] Create `InstanceParameterCandidateSet` with `Name` deduplication invariant (`src/BatchParamUpdate.Domain/Model/InstanceParameterCandidateSet.cs`, FR-007) (depends on T059)
-- [ ] T061 [P] [US3] Create `TypeParameterCandidateSet` with `Name` deduplication invariant (`src/BatchParamUpdate.Domain/Model/TypeParameterCandidateSet.cs`, FR-008) (depends on T059)
-- [ ] T062 [US3] Create `SharedSearchQuery` with in-memory filtering of `MatchesInstanceSet`/`MatchesTypeSet` (`src/BatchParamUpdate.Domain/Model/SharedSearchQuery.cs`, FR-011/FR-012) (depends on T060, T061)
-- [ ] T063 [US3] Create interface `IParameterDiscoveryPort` with `DiscoverInstanceCandidates`/`DiscoverTypeCandidates` (`src/BatchParamUpdate.Domain/Ports/IParameterDiscoveryPort.cs`, contracts/ports.md §2) (depends on T060, T061)
-- [ ] T064 [P] [US3] Create in-memory fake of `IParameterDiscoveryPort` for tests (`tests/BatchParamUpdate.Tests.Unit/Fakes/FakeParameterDiscoveryPort.cs`) (depends on T063)
-- [ ] T065 [P] [US3] Create record `ResolvedType` and discriminated `ExecutionScope` (`InstanceScope`/`TypeScope`) (`src/BatchParamUpdate.Domain/Model/ExecutionScope.cs`, data-model.md §5) (depends on T020)
-- [ ] T066 [US3] Create entity `ReplacementOperation` with `TargetParameter`/`NewValue`/`RequiresWideBlastRadiusWarning`/`ExecutionScope` (`src/BatchParamUpdate.Domain/Model/ReplacementOperation.cs`, FR-013/FR-014) (depends on T059, T065)
-- [ ] T067 [US3] Create `DiscoverParametersUseCase` in `Application` that orchestrates discovery, applies the shared search, and validates exactly one parameter selection (`src/BatchParamUpdate.Application/UseCases/DiscoverParametersUseCase.cs`) (depends on T062, T063, T066, T023)
-- [ ] T068 [US3] Implement `RevitParameterDiscoveryPort.DiscoverInstanceCandidates` iterating `Element.Parameters` with filter `StorageType.String && !IsReadOnly` (`src/BatchParamUpdate.Adapters.Revit/Discovery/RevitParameterDiscoveryPort.cs`, research.md §d) (depends on T063)
-- [ ] T069 [US3] Implement `RevitParameterDiscoveryPort.DiscoverTypeCandidates` resolving `document.GetElement(element.GetTypeId()).Parameters` (`src/BatchParamUpdate.Adapters.Revit/Discovery/RevitParameterDiscoveryPort.cs`) (depends on T068)
-- [ ] T070 [P] [US3] Create `ParameterDiscoveryViewModel` with the filtered Dialog Box 1/2 lists and the parameter-selection command (`src/BatchParamUpdate.UI.Wpf/ViewModels/ParameterDiscoveryViewModel.cs`, FR-010/FR-013/FR-014) (depends on T067)
-- [ ] T071 [P] [US3] Create `SharedSearchViewModel` that updates `SharedSearchQuery.Text` live as the user types (`src/BatchParamUpdate.UI.Wpf/ViewModels/SharedSearchViewModel.cs`, FR-011) (depends on T062)
-- [ ] T072 [P] [US3] Create Dialog Box 1 (Instance) view with candidate list and "no results" message (`src/BatchParamUpdate.UI.Wpf/Views/InstanceParameterDialog.xaml`, FR-012) (depends on T070)
-- [ ] T073 [P] [US3] Create Dialog Box 2 (Type) view with candidate list, "no results" message, and the non-blocking inline warning when selecting a candidate (`src/BatchParamUpdate.UI.Wpf/Views/TypeParameterDialog.xaml`, FR-012/FR-014) (depends on T070)
+- [X] T059 [P] [US3] Create shared record `ParameterCandidate` (`src/BatchParamUpdate.Domain/Model/ParameterCandidate.cs`: `Name`, `Binding`, `SourceElementRefs`, data-model.md §2) (depends on T020, T021)
+- [X] T060 [P] [US3] Create `InstanceParameterCandidateSet` with `Name` deduplication invariant (`src/BatchParamUpdate.Domain/Model/InstanceParameterCandidateSet.cs`, FR-007) (depends on T059)
+- [X] T061 [P] [US3] Create `TypeParameterCandidateSet` with `Name` deduplication invariant (`src/BatchParamUpdate.Domain/Model/TypeParameterCandidateSet.cs`, FR-008) (depends on T059)
+- [X] T062 [US3] Create `SharedSearchQuery` with in-memory filtering of `MatchesInstanceSet`/`MatchesTypeSet` (`src/BatchParamUpdate.Domain/Model/SharedSearchQuery.cs`, FR-011/FR-012) (depends on T060, T061)
+- [X] T063 [US3] Create interface `IParameterDiscoveryPort` with `DiscoverInstanceCandidates`/`DiscoverTypeCandidates` (`src/BatchParamUpdate.Domain/Ports/IParameterDiscoveryPort.cs`, contracts/ports.md §2) (depends on T060, T061)
+- [X] T064 [P] [US3] Create in-memory fake of `IParameterDiscoveryPort` for tests (`tests/BatchParamUpdate.Tests.Unit/Fakes/FakeParameterDiscoveryPort.cs`) (depends on T063)
+- [X] T065 [P] [US3] Create record `ResolvedType` and discriminated `ExecutionScope` (`InstanceScope`/`TypeScope`) (`src/BatchParamUpdate.Domain/Model/ExecutionScope.cs`, data-model.md §5) (depends on T020)
+- [X] T066 [US3] Create entity `ReplacementOperation` with `TargetParameter`/`NewValue`/`RequiresWideBlastRadiusWarning`/`ExecutionScope` (`src/BatchParamUpdate.Domain/Model/ReplacementOperation.cs`, FR-013/FR-014) (depends on T059, T065)
+- [X] T067 [US3] Create `DiscoverParametersUseCase` in `Application` that orchestrates discovery, applies the shared search, and validates exactly one parameter selection (`src/BatchParamUpdate.Application/UseCases/DiscoverParametersUseCase.cs`) (depends on T062, T063, T066, T023)
+- [X] T068 [US3] Implement `RevitParameterDiscoveryPort.DiscoverInstanceCandidates` iterating `Element.Parameters` with filter `StorageType.String && !IsReadOnly` (`src/BatchParamUpdate.Adapters.Revit/Discovery/RevitParameterDiscoveryPort.cs`, research.md §d) (depends on T063)
+- [X] T069 [US3] Implement `RevitParameterDiscoveryPort.DiscoverTypeCandidates` resolving `document.GetElement(element.GetTypeId()).Parameters` (`src/BatchParamUpdate.Adapters.Revit/Discovery/RevitParameterDiscoveryPort.cs`) (depends on T068)
+- [X] T070 [P] [US3] Create `ParameterDiscoveryViewModel` with the filtered Dialog Box 1/2 lists and the parameter-selection command (`src/BatchParamUpdate.UI.Wpf/ViewModels/ParameterDiscoveryViewModel.cs`, FR-010/FR-013/FR-014) (depends on T067)
+- [X] T071 [P] [US3] Create `SharedSearchViewModel` that updates `SharedSearchQuery.Text` live as the user types (`src/BatchParamUpdate.UI.Wpf/ViewModels/SharedSearchViewModel.cs`, FR-011) (depends on T062)
+- [X] T072 [P] [US3] Create Dialog Box 1 (Instance) view with candidate list and "no results" message (`src/BatchParamUpdate.UI.Wpf/Views/InstanceParameterDialog.xaml`, FR-012) (depends on T070)
+- [X] T073 [P] [US3] Create Dialog Box 2 (Type) view with candidate list, "no results" message, and the non-blocking inline warning when selecting a candidate (`src/BatchParamUpdate.UI.Wpf/Views/TypeParameterDialog.xaml`, FR-012/FR-014) (depends on T070)
 
 **Checkpoint**: US1, US2, and US3 work independently — the user can get as far as having a chosen parameter.
 
