@@ -228,22 +228,22 @@ tests/BatchParamUpdate.Tests.Unit/          #   Domain/, Application/, Fakes/
 
 ### Tests for User Story 5
 
-- [ ] T098 [P] [US5] Unit test: `RecordSessionUseCase` writes a `MetricsRecord.SessionStart` at session start (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, FR-034)
-- [ ] T099 [US5] Unit test: `RecordSessionUseCase` aggregates `BatchResult` with `SkippedCounts` and `CountsByCategory` grouped by classification type and category (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, FR-042)
-- [ ] T100 [US5] Unit test: `RecordSessionUseCase` emits `SessionEnd` with the correct `FinalState` on `Completed`/`Blocked`/`Cancelled` (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, FR-034)
-- [ ] T101 [US5] Unit test: a simulated `ISessionRecorderPort` failure does not interrupt the batch and produces `WARN-400-SESSION-RECORD-FAILED` via `ILoggerPort` (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, edge case "session record cannot be written")
+- [X] T098 [P] [US5] Unit test: `RecordSessionUseCase` writes a `MetricsRecord.SessionStart` at session start (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, FR-034)
+- [X] T099 [US5] Unit test: `RecordSessionUseCase` aggregates `BatchResult` with `SkippedCounts` and `CountsByCategory` grouped by classification type and category (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, FR-042)
+- [X] T100 [US5] Unit test: `RecordSessionUseCase` emits `SessionEnd` with the correct `FinalState` on `Completed`/`Blocked`/`Cancelled` (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, FR-034)
+- [X] T101 [US5] Unit test: a simulated `ISessionRecorderPort` failure does not interrupt the batch and produces `WARN-400-SESSION-RECORD-FAILED` via `ILoggerPort` (`tests/BatchParamUpdate.Tests.Unit/Application/RecordSessionUseCaseTests.cs`, edge case "session record cannot be written")
 
 ### Implementation for User Story 5
 
-- [ ] T102 [US5] Create `RecordSessionUseCase` in `Application` that orchestrates emitting `MetricsRecord` (`SessionStart`/`SearchPerformed`/`ParameterSelected`/`PhaseTiming`/`BatchResult`/`SessionEnd`) via `ISessionRecorderPort` (`src/BatchParamUpdate.Application/UseCases/RecordSessionUseCase.cs`, FR-039–FR-043) (depends on T029, T030, T023)
-- [ ] T103 [P] [US5] Create utility `PhaseTimer` that measures elapsed time of the discovery phase and the execution phase (`src/BatchParamUpdate.Core/PhaseTimer.cs`, FR-039)
-- [ ] T104 [US5] Implement `NdjsonSessionRecorder.Record` serializing each `MetricsRecord` with `System.Text.Json` and writing with `File.AppendAllText` under `%TEMP%\juanManriqueHexagon\TRACKER\revit-{runId}-{documentName}.ndjson` (`src/BatchParamUpdate.Adapters.Persistence/NdjsonSessionRecorder.cs`, research.md §f, FR-043) (depends on T029, T030, T031, T032)
-- [ ] T105 [US5] Implement write-failure handling in `NdjsonSessionRecorder`: catch the exception, emit `WARN-400-SESSION-RECORD-FAILED` via `ILoggerPort`, and do not propagate the failure to the in-flight batch (`src/BatchParamUpdate.Adapters.Persistence/NdjsonSessionRecorder.cs`) (depends on T104)
-- [ ] T106 [US5] Configure `SessionFileLogger` output path to `%TEMP%\juanManriqueHexagon\LOGS\revit-{runId}-{documentName}.txt` using `RunIdGenerator` and `DocumentNameSanitizer` (`src/BatchParamUpdate.Core/SessionFileLogger.cs`, FR-035–FR-038) (depends on T033, T031, T032)
-- [ ] T107 [US5] Connect recording of each `ElementSkip` (code + message) during `RunBatchUpdateUseCase` to `ILoggerPort` (`src/BatchParamUpdate.Application/UseCases/RunBatchUpdateUseCase.cs`, FR-031) (depends on T088, T028)
-- [ ] T108 [US5] Connect recording of the final session summary to `ILoggerPort` when completing or blocking the session (`src/BatchParamUpdate.Application/UseCases/RecordSessionUseCase.cs`) (depends on T102)
-- [ ] T109 [P] [US5] Connect `RecordSessionUseCase` to invoke `PhaseTimer` and emit `PhaseTiming("Discovery")` when `DiscoverParametersUseCase` finishes (`src/BatchParamUpdate.Application/UseCases/DiscoverParametersUseCase.cs`, FR-039) (depends on T067, T103)
-- [ ] T110 [US5] Connect `RecordSessionUseCase` to invoke `PhaseTimer` and emit `PhaseTiming("Execution")` when `RunBatchUpdateUseCase` finishes (`src/BatchParamUpdate.Application/UseCases/RunBatchUpdateUseCase.cs`, FR-039) (depends on T088, T103)
+- [X] T102 [US5] Create `RecordSessionUseCase` in `Application` that orchestrates emitting `MetricsRecord` (`SessionStart`/`SearchPerformed`/`ParameterSelected`/`PhaseTiming`/`BatchResult`/`SessionEnd`) via `ISessionRecorderPort` (`src/BatchParamUpdate.Application/UseCases/RecordSessionUseCase.cs`, FR-039–FR-043) (depends on T029, T030, T023)
+- [X] T103 [P] [US5] Create utility `PhaseTimer` that measures elapsed time of the discovery phase and the execution phase (`src/BatchParamUpdate.Core/PhaseTimer.cs`, FR-039)
+- [X] T104 [US5] Implement `NdjsonSessionRecorder.Record` serializing each `MetricsRecord` with `System.Text.Json` and writing with `File.AppendAllText` under `%TEMP%\juanManriqueHexagon\TRACKER\revit-{runId}-{documentName}.ndjson` (`src/BatchParamUpdate.Adapters.Persistence/NdjsonSessionRecorder.cs`, research.md §f, FR-043) (depends on T029, T030, T031, T032)
+- [X] T105 [US5] Implement write-failure handling in `NdjsonSessionRecorder`: catch the exception, emit `WARN-400-SESSION-RECORD-FAILED` via `ILoggerPort`, and do not propagate the failure to the in-flight batch (`src/BatchParamUpdate.Adapters.Persistence/NdjsonSessionRecorder.cs`) (depends on T104)
+- [X] T106 [US5] Configure `SessionFileLogger` output path to `%TEMP%\juanManriqueHexagon\LOGS\revit-{runId}-{documentName}.txt` using `RunIdGenerator` and `DocumentNameSanitizer` (`src/BatchParamUpdate.Core/SessionFileLogger.cs`, FR-035–FR-038) (depends on T033, T031, T032)
+- [X] T107 [US5] Connect recording of each `ElementSkip` (code + message) during `RunBatchUpdateUseCase` to `ILoggerPort` (`src/BatchParamUpdate.Application/UseCases/RunBatchUpdateUseCase.cs`, FR-031) (depends on T088, T028)
+- [X] T108 [US5] Connect recording of the final session summary to `ILoggerPort` when completing or blocking the session (`src/BatchParamUpdate.Application/UseCases/RecordSessionUseCase.cs`) (depends on T102)
+- [X] T109 [P] [US5] Connect `RecordSessionUseCase` to invoke `PhaseTimer` and emit `PhaseTiming("Discovery")` when `DiscoverParametersUseCase` finishes (`src/BatchParamUpdate.Application/UseCases/DiscoverParametersUseCase.cs`, FR-039) (depends on T067, T103)
+- [X] T110 [US5] Connect `RecordSessionUseCase` to invoke `PhaseTimer` and emit `PhaseTiming("Execution")` when `RunBatchUpdateUseCase` finishes (`src/BatchParamUpdate.Application/UseCases/RunBatchUpdateUseCase.cs`, FR-039) (depends on T088, T103)
 
 **Checkpoint**: All 5 user stories work independently — traceability/observability complete.
 
