@@ -1,0 +1,15 @@
+<Window x:Class="BatchParamUpdate.UI.Wpf.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Batch Parameter Update"
+        Height="480"
+        Width="720">
+  <Grid Margin="16">
+    <Button Content="Select Elements"
+            IsEnabled="{Binding IsSelectElementsEnabled}"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Padding="12,6"
+            MinWidth="140" />
+  </Grid>
+</Window>
