@@ -27,19 +27,43 @@ public sealed class EstablishSelectionUseCaseTests
     }
 
     [Fact]
-    public void Execute_WhenPreExistingEmpty_DoesNotPromptAndStaysStarted()
+    public void Execute_WhenNoPreExisting_InvokesPromptManualSelection()
     {
+        var picked = new SelectionContext(
+            [new ElementRef("7", "Walls")],
+            SelectionOrigin.ManualPick);
         var port = new FakeElementSelectionPort
         {
-            PreExisting = new SelectionContext([], SelectionOrigin.PreExisting)
+            PreExisting = new SelectionContext([], SelectionOrigin.PreExisting),
+            Manual = picked
         };
         var useCase = new EstablishSelectionUseCase(port);
         var session = new Session();
 
         var result = useCase.Execute(session);
 
+        Assert.Same(picked, result);
+        Assert.Equal(1, port.PromptManualSelectionCalls);
+        Assert.Equal(SelectionOrigin.ManualPick, result.Origin);
+        Assert.Equal(SessionState.Discovering, session.State);
+    }
+
+    [Fact]
+    public void Execute_WhenManualPickCancelled_LeavesSessionWithoutValidScope()
+    {
+        var port = new FakeElementSelectionPort
+        {
+            PreExisting = new SelectionContext([], SelectionOrigin.PreExisting),
+            Manual = null
+        };
+        var useCase = new EstablishSelectionUseCase(port);
+        var session = new Session();
+
+        var result = useCase.Execute(session);
+
+        Assert.Equal(1, port.PromptManualSelectionCalls);
         Assert.False(result.IsValid);
-        Assert.Equal(0, port.PromptManualSelectionCalls);
+        Assert.Equal(SelectionOrigin.ManualPick, result.Origin);
         Assert.Equal(SessionState.Started, session.State);
     }
 }

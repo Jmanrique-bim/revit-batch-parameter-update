@@ -11,6 +11,13 @@ packages/
 .env
 *.addin.user
 
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+
 .cursor/
 .specify/
 ref docs/

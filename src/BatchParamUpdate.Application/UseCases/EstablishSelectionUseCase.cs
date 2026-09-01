@@ -16,8 +16,18 @@ public sealed class EstablishSelectionUseCase
 
         var context = _selection.GetPreExistingSelection();
         if (context.IsValid)
+        {
             session.TransitionTo(SessionState.Discovering);
+            return context;
+        }
 
-        return context;
+        var manual = _selection.PromptManualSelection();
+        if (manual is { IsValid: true })
+        {
+            session.TransitionTo(SessionState.Discovering);
+            return manual;
+        }
+
+        return new SelectionContext([], SelectionOrigin.ManualPick);
     }
 }
