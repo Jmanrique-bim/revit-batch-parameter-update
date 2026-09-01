@@ -253,20 +253,20 @@ tests/BatchParamUpdate.Tests.Unit/          #   Domain/, Application/, Fakes/
 
 **Purpose**: Packaging/installer (FR-044–FR-048, not tied to a specific `spec.md` story), supported-version documentation, and in-memory end-to-end tests that cross several stories.
 
-- [ ] T111 [P] Create interface `IInstallerPort` with `DetectInstalledRevitYears`/`Install`/`Update`/`Uninstall` (`src/BatchParamUpdate.Domain/Ports/IInstallerPort.cs`, contracts/ports.md §7)
-- [ ] T112 [P] Create in-memory fake of `IInstallerPort` for tests (`tests/BatchParamUpdate.Tests.Unit/Fakes/FakeInstallerPort.cs`) (depends on T111)
-- [ ] T113 [P] Unit test: `InstallerPackage.SupportedRevitYears` is a closed list `{2025, 2026, 2027}` and never offers install for a year outside it (`tests/BatchParamUpdate.Tests.Unit/Domain/InstallerPackageTests.cs`, FR-046, SC-009)
-- [ ] T114 [P] Create entity `InstallerPackage` (`src/BatchParamUpdate.Domain/Model/InstallerPackage.cs`: `SupportedRevitYears`, `DetectedRevitYears`, `Actions`, data-model.md §10) (depends on T111)
-- [ ] T115 Implement `RevitInstallerAdapter.DetectInstalledRevitYears` reading `HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\Revit\{year}` (and its `WOW6432Node` reflection) (`src/BatchParamUpdate.Installer/RevitInstallerAdapter.cs`, research.md §h, FR-047) (depends on T111)
-- [ ] T116 Implement `RevitInstallerAdapter.Install`/`Update`/`Uninstall` copying the matching `Adapters.Revit.{year}` assembly and its `.addin` manifest (`Application` = `App`) per year, resolving the Revit 2027-specific destination path (`src/BatchParamUpdate.Installer/RevitInstallerAdapter.cs`, research.md §h Revit 2027 risk) (depends on T115)
-- [ ] T117 [P] Create `InstallerViewModel` exposing detected years and Install/Update/Uninstall actions (`src/BatchParamUpdate.Installer/ViewModels/InstallerViewModel.cs`, FR-047) (depends on T114)
-- [ ] T118 [P] Create the installer WPF view (detected-version list + action buttons) (`src/BatchParamUpdate.Installer/Views/InstallerWindow.xaml`) (depends on T117)
+- [X] T111 [P] Create interface `IInstallerPort` with `DetectInstalledRevitYears`/`Install`/`Update`/`Uninstall` (`src/BatchParamUpdate.Domain/Ports/IInstallerPort.cs`, contracts/ports.md §7)
+- [X] T112 [P] Create in-memory fake of `IInstallerPort` for tests (`tests/BatchParamUpdate.Tests.Unit/Fakes/FakeInstallerPort.cs`) (depends on T111)
+- [X] T113 [P] Unit test: `InstallerPackage.SupportedRevitYears` is a closed list `{2025, 2026, 2027}` and never offers install for a year outside it (`tests/BatchParamUpdate.Tests.Unit/Domain/InstallerPackageTests.cs`, FR-046, SC-009)
+- [X] T114 [P] Create entity `InstallerPackage` (`src/BatchParamUpdate.Domain/Model/InstallerPackage.cs`: `SupportedRevitYears`, `DetectedRevitYears`, `Actions`, data-model.md §10) (depends on T111)
+- [X] T115 Implement `RevitInstallerAdapter.DetectInstalledRevitYears` reading `HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\Revit\{year}` (and its `WOW6432Node` reflection) (`src/BatchParamUpdate.Installer/RevitInstallerAdapter.cs`, research.md §h, FR-047) (depends on T111)
+- [X] T116 Implement `RevitInstallerAdapter.Install`/`Update`/`Uninstall` copying the matching `Adapters.Revit.{year}` assembly and its `.addin` manifest (`Application` = `App`) per year, resolving the Revit 2027-specific destination path (`src/BatchParamUpdate.Installer/RevitInstallerAdapter.cs`, research.md §h Revit 2027 risk) (depends on T115)
+- [X] T117 [P] Create `InstallerViewModel` exposing detected years and Install/Update/Uninstall actions (`src/BatchParamUpdate.Installer/ViewModels/InstallerViewModel.cs`, FR-047) (depends on T114)
+- [X] T118 [P] Create the installer WPF view (detected-version list + action buttons) (`src/BatchParamUpdate.Installer/Views/InstallerWindow.xaml`) (depends on T117)
 - [x] T119 [P] Create per-year `.addin` manifests (2025/2026/2027) with matching add-in paths, each registering `App` as the Application class (`src/BatchParamUpdate.Adapters.Revit.2025/BatchParamUpdate.Adapters.Revit.2025.addin`, `.2026.addin`, `.2027.addin`). Revit 2027 extra schema keys (`PublicAssemblies`/`Dependencies`) remain to re-verify on a real 2027 install (research.md §h) (depends on T018)
-- [ ] T120 [P] Configure the Velopack packaging script (`vpk pack -u BatchParamUpdate -e Installer.exe`) for the `Installer` project (`src/BatchParamUpdate.Installer/pack.ps1`, research.md §h, FR-044)
-- [ ] T121 [P] Write repository `README.md` stating explicitly which Revit versions the add-in supports (2025/2026/2027) and that no other version is supported (FR-045/FR-046, SC-009)
-- [ ] T122 [P] In-memory end-to-end unit test (all fakes) of the full Instance path: selection → discovery → replacement → execution → summary (`tests/BatchParamUpdate.Tests.Unit/Application/EndToEndInstancePathTests.cs`)
-- [ ] T123 [P] In-memory end-to-end unit test of the full Type path, including the non-blocking inline warning (`tests/BatchParamUpdate.Tests.Unit/Application/EndToEndTypePathTests.cs`)
-- [ ] T124 Manually run the 6 scenarios in `quickstart.md` against a real Revit install (launching from the dedicated ribbon button) and document results, including the 2 risks marked "re-verify" in `research.md` (Type-path on Model Group; Revit 2027 `.addin` manifest schema) (depends on T097, T116, T119)
+- [X] T120 [P] Configure the Velopack packaging script (`vpk pack -u BatchParamUpdate -e Installer.exe`) for the `Installer` project (`src/BatchParamUpdate.Installer/pack.ps1`, research.md §h, FR-044)
+- [X] T121 [P] Write repository `README.md` stating explicitly which Revit versions the add-in supports (2025/2026/2027) and that no other version is supported (FR-045/FR-046, SC-009)
+- [X] T122 [P] In-memory end-to-end unit test (all fakes) of the full Instance path: selection → discovery → replacement → execution → summary (`tests/BatchParamUpdate.Tests.Unit/Application/EndToEndInstancePathTests.cs`)
+- [X] T123 [P] In-memory end-to-end unit test of the full Type path, including the non-blocking inline warning (`tests/BatchParamUpdate.Tests.Unit/Application/EndToEndTypePathTests.cs`)
+- [X] T124 Manually run the 6 scenarios in `quickstart.md` against a real Revit install (launching from the dedicated ribbon button) and document results, including the 2 risks marked "re-verify" in `research.md` (Type-path on Model Group; Revit 2027 `.addin` manifest schema) (depends on T097, T116, T119)
 
 ---
 
