@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>8E2F4A91-6C3B-4D7E-A1F0-9B5C2D8E3A14</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>BatchParamUpdate.Adapters.Revit</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- ponytail: glob so later phases can add Selection/Discovery/Writing without editing this file. Ceiling: VS Shared Project explorer may not list new files until reload. -->
+    <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" />
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\*.png" />
+  </ItemGroup>
+</Project>

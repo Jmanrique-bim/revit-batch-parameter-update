@@ -15,40 +15,48 @@ FR/Assumption from `spec.md` and is closed (none left open).
 
 ## a) Multi-target Revit 2025-2027 from a single solution
 
-**Decision**: A single SDK-style `.csproj` (`Adapters.Revit` and thin
-per-year command wiring) with
-`<TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>`
-and a `RevitVersion` property set per build configuration
-(`Debug2025|Release2025`, `Debug2026|Release2026`,
-`Debug2027|Release2027`), following the conditional MSBuild pattern
-documented in
-[`RevitAPI_MultiVersion_Setup`](https://github.com/HariharanRadha09585/RevitAPI_MultiVersion_Setup)
-and confirmed by Autodesk's public .NET-migration documentation:
+**Decision**: One Visual Studio Shared Project holds all Revit-adapter
+source (`src/BatchParamUpdate.Adapters.Revit/*.cs`, `.projitems`). Three
+thin SDK-style year projects import that source and bind to that year's
+API — the same scheme as ipx.bimops (`ipx.bimops.revit.2025` / `.2026`
+importing `ipx.bimops.revit.ui.projitems`) and IP Catalog
+(`IPX.Catalog.Revit.2025` / `.2026`). Solution configurations stay
+`Debug`/`Release`; the year is the **project**, not the configuration
+name. A `Debug` solution build therefore produces 2025, 2026, and 2027
+outputs side by side.
 
-| Configuration | `TargetFramework` | Referenced `RevitAPI.dll` | `DefineConstants` |
+| Project | `TargetFramework` | Referenced `RevitAPI.dll` | `DefineConstants` |
 |---|---|---|---|
-| `*2025` | `net8.0-windows` | `%ProgramFiles%\Autodesk\Revit 2025\RevitAPI.dll` | `REVIT2025;REVIT2025_OR_GREATER` |
-| `*2026` | `net8.0-windows` | `%ProgramFiles%\Autodesk\Revit 2026\RevitAPI.dll` | `REVIT2026;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER` |
-| `*2027` | `net10.0-windows` | `%ProgramFiles%\Autodesk\Revit 2027\RevitAPI.dll` | `REVIT2027;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER;REVIT2027_OR_GREATER` |
+| `Adapters.Revit.2025` | `net8.0-windows` | `%ProgramFiles%\Autodesk\Revit 2025\RevitAPI.dll` | `REVIT2025;REVIT2025_OR_GREATER` |
+| `Adapters.Revit.2026` | `net8.0-windows` | `%ProgramFiles%\Autodesk\Revit 2026\RevitAPI.dll` | `REVIT2026;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER` |
+| `Adapters.Revit.2027` | `net10.0-windows` | `%ProgramFiles%\Autodesk\Revit 2027\RevitAPI.dll` | `REVIT2027;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER;REVIT2027_OR_GREATER` |
 
-References to `RevitAPI.dll`/`RevitAPIUI.dll` resolve via
-`Condition="'$(RevitVersion)'=='20XX'"` with a variable `HintPath`,
-`Private=false` and `CopyLocal=false` (never redistribute Revit DLLs).
-Version-conditioned code uses `REVITXXXX_OR_GREATER` symbols, not
-`#if REVIT2025 || REVIT2026 || ...`, so adding Revit 2028 later is additive.
+Each year project sets `RevitYear`, imports
+`src/BatchParamUpdate.Adapters.Revit/Year.props` (HintPath, `Private=false`,
+`CopyLocal=false`, TFM, constants, Debug copy into
+`%AppData%\Autodesk\REVIT\Addins\{year}`), and ships its own `.addin`
+with `Assembly` = `BatchParamUpdate\BatchParamUpdate.Adapters.Revit.{year}.dll`.
+Version-conditioned code uses `REVITXXXX_OR_GREATER` symbols so adding
+Revit 2028 is a new thin project plus an additive `#if`, not a
+configuration-matrix change.
 
-**Rationale**: This is exactly the pattern cited in
-`spec.md` → Assumptions → "Multi-version project setup" and in FR-048
-(shared codebase, per-year configurations rather than a project per
-version). A single code tree with compile symbols avoids duplicating
-`Domain`/`Application`/`UI.Wpf` (which do not depend on Revit and therefore
-do not need multi-targeting) and concentrates real divergence (assembly
-references, occasional API signature changes) in `Adapters.Revit`.
+`Domain` / `Application` / `Core` / `UI.Wpf` / `Installer` stay
+year-neutral and are not duplicated.
+
+**Rationale**: FR-048 requires one shared codebase/solution. A year
+project plus shared `.projitems` keeps one code tree, lets a single
+solution build emit every supported year, gives each year its own
+assembly name and `.addin`, and matches the production pattern already
+used in ipx.bimops. Debug deploy per year is then a PostBuild on that
+project, not a configuration switch.
 
 **Alternatives considered**:
-- *One `.sln`/project per Revit year* (year-suffixed projects such as
-  `.2021`–`.2026` in researched reference sources): rejected explicitly by
-  FR-048 ("rather than a separate project per Revit version").
+- *One `.csproj` with `Debug2025`/`Release2027` configurations*
+  ([`RevitAPI_MultiVersion_Setup`](https://github.com/HariharanRadha09585/RevitAPI_MultiVersion_Setup)):
+  rejected. A solution build then produces only one year; CI needs a
+  configuration matrix; assembly identity and `.addin` stay shared
+  unless further conditioned. That is the opposite of the bimops local
+  loop (build once, three add-ins on disk).
 - *A single TFM (`net8.0-windows`) for all three versions*: **rejected**
   after investigating Revit's real state as of this plan date
   (2026-08-31): Autodesk is migrating **Revit 2025 and 2026 from .NET 8 to
@@ -68,13 +76,17 @@ references, occasional API signature changes) in `Adapters.Revit`.
 
 **Open risk for the stakeholder** *(see also plan.md → Complexity
 Tracking)*: if the evaluation machine already has the 2025.5/2026.5
-(.NET 10) update for Revit 2025/2026, the `*2025`/`*2026` configurations
+(.NET 10) update for Revit 2025/2026, the 2025/2026 **projects**
 in the table above must point at `net10.0-windows` instead of
 `net8.0-windows`, with no API changes. Before building the final
 installer, verify the Revit 2025/2026 patch level on the
-build/evaluation machine and adjust those two configurations' 
+build/evaluation machine and adjust those two projects'
 `TargetFramework` if needed. This does not change any architecture
-decision, only the TFM of two of the six build configurations.
+decision, only the TFM of two of the three year projects. Building
+`Adapters.Revit.2027` requires a .NET 10 SDK; without it, build that
+project only after the SDK is installed — 2025/2026 still compile. The
+`.sln` lists the 2027 project but does not include it in the default
+solution build so `dotnet build` stays green without a .NET 10 SDK.
 
 ---
 
@@ -371,7 +383,7 @@ The flow:
      `WOW6432Node` reflection on mixed 32/64-bit systems) for each of
      2025/2026/2027.
    - For each detected year, offers Install/Update/Uninstall, copying the
-     `Adapters.Revit` assembly built with that year's configuration plus
+     `Adapters.Revit.{year}` assembly plus
      its `.addin` manifest (Application class = `App`) to the matching
      add-ins folder.
    - **Risk note (Revit 2027)**: Revit 2027 changes the "all users"

@@ -222,7 +222,7 @@ public interface IInstallerPort
 
 - **Production adapter**: `Installer.RevitInstallerAdapter` — reads
   `HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\Revit\{year}` (research.md §h)
-  and copies the `Adapters.Revit` assembly built for that year plus its
+  and copies the `Adapters.Revit.{year}` assembly plus its
   `.addin` manifest (`Application` = `App`) to the matching add-ins
   folder (with the Revit 2027 caveat documented as a risk in
   research.md §h).

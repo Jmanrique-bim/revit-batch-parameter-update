@@ -31,10 +31,10 @@ Success Criteria (SC) in `spec.md` that it validates.
      scenario may be validated by reading the code instead and left
      annotated as pending manual verification — it does not block the
      rest of the quickstart.
-3. **Build + installer**: `BatchParamUpdate.sln` built Release for the
-   available Revit year (see `plan.md` → Project Structure for per-year
-   configurations), and Velopack installer generated (`vpk pack`, see
-   `research.md` §h).
+3. **Build + installer**: `BatchParamUpdate.sln` built Release (year adapter
+   projects `Adapters.Revit.2025` / `.2026` / `.2027` compile in the same
+   Debug/Release pass; see `plan.md` → Project Structure), and Velopack
+   installer generated (`vpk pack`, see `research.md` §h).
 
 ## Installation
 
