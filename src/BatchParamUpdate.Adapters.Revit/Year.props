@@ -1,0 +1,60 @@
+<Project>
+  <!-- ponytail: one props file for the three year shells; RevitYear is set by the importing csproj. -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>BatchParamUpdate.Adapters.Revit</RootNamespace>
+    <AssemblyName>BatchParamUpdate.Adapters.Revit.$(RevitYear)</AssemblyName>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+    <RevitInstallDir Condition="'$(RevitInstallDir)'==''">$(ProgramW6432)\Autodesk\Revit $(RevitYear)</RevitInstallDir>
+    <RevitAddinDebugDir>$(AppData)\Autodesk\REVIT\Addins\$(RevitYear)</RevitAddinDebugDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(RevitYear)'=='2025'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <DefineConstants>$(DefineConstants);REVIT2025;REVIT2025_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitYear)'=='2026'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <DefineConstants>$(DefineConstants);REVIT2026;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitYear)'=='2027'">
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <DefineConstants>$(DefineConstants);REVIT2027;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER;REVIT2027_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+      <CopyLocal>false</CopyLocal>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+      <CopyLocal>false</CopyLocal>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildProjectDirectory)\*.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)BatchParamUpdate.Adapters.Revit.projitems" Label="Shared" />
+
+  <Target Name="CopyAddinForDebug" AfterTargets="Build" Condition="'$(Configuration)'=='Debug' AND '$(CI)'!='true'">
+    <MakeDir Directories="$(RevitAddinDebugDir)\BatchParamUpdate" />
+    <ItemGroup>
+      <_AddinFiles Include="$(MSBuildProjectDirectory)\*.addin" />
+      <_OutputFiles Include="$(TargetDir)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_AddinFiles)" DestinationFolder="$(RevitAddinDebugDir)" SkipUnchangedFiles="true" ContinueOnError="true" />
+    <Copy SourceFiles="@(_OutputFiles)" DestinationFolder="$(RevitAddinDebugDir)\BatchParamUpdate\%(RecursiveDir)" SkipUnchangedFiles="true" ContinueOnError="true" />
+  </Target>
+</Project>

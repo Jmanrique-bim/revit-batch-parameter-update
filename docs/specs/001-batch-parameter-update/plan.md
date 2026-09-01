@@ -14,7 +14,8 @@ shared search. The technical approach is a Domain/Hexagonal architecture
 with ports & adapters: `Domain`/`Application` hold all parameter-discovery
 logic, 400/500 error classification, and batch orchestration without
 referencing the Revit API, while `Adapters.Revit` implements that logic
-against the real API (per year, via conditional multi-targeting) and
+against the real API (shared source compiled by a thin project per
+Revit year) and
 `Adapters.Persistence` implements `.txt` log and NDJSON metrics
 persistence under `%TEMP%\juanManriqueHexagon`.
 
@@ -96,7 +97,7 @@ use case except as the already-documented Type-path side effect.
 | II. Traceability | Each session generates its own `runId` (research.md §f), and the `.txt`/`.ndjson` pair named `revit-{runId}-{documentName}` reconstructs searches, applied parameter/value, path used, and outcome without Revit open (FR-034–FR-043). | PASS |
 | III. Observability | 400/500 catalog formalized in `data-model.md` (`Error/Warning Code Catalog`), with non-technical messages and aggregated counts by type/category in the `Session Metrics Record` (FR-027–FR-033, FR-042). | PASS |
 | IV. Testability | `Domain`/`Application` do not reference `RevitAPI.dll`; they are exercised with port fakes in xUnit (research.md §g). Ribbon registration is adapter-only and is not a domain port. | PASS |
-| V. Hexagonal Architecture (ports & adapters) | The seven ports in `contracts/ports.md` are the only contact surface between `Domain`/`Application` and the outside world (Revit, filesystem, installer). `Adapters.Revit` is the only project that references `RevitAPI.dll`. Ribbon/`App` live in that adapter and do not add an eighth port. | PASS |
+| V. Hexagonal Architecture (ports & adapters) | The seven ports in `contracts/ports.md` are the only contact surface between `Domain`/`Application` and the outside world (Revit, filesystem, installer). Only the `Adapters.Revit.20XX` year projects reference `RevitAPI.dll`. Ribbon/`App` live in the shared adapter source and do not add an eighth port. | PASS |
 
 **Result**: No violations. Complexity Tracking below documents design
 decisions that depart from the "simplest" option for reasons already
@@ -141,15 +142,19 @@ src/
 │                                         #   RunBatchUpdateUseCase, RecordSessionUseCase.
 │                                         #   Orchestrates Domain + ports; no RevitAPI.dll.
 │
-├── BatchParamUpdate.Adapters.Revit/      # Real port implementations against the Revit API.
+├── BatchParamUpdate.Adapters.Revit/      # Shared Revit-adapter source (.shproj/.projitems).
 │   ├── App.cs                            #   IExternalApplication: OnStartup registers
 │   ├── Resources/                        #   lineal-color optimization PNGs (64/100 sourced;
 │   │                                     #   16/32 derived at implementation if needed)
-│   ├── Selection/                        #   Multi-target net8.0-windows/net10.0-windows per year
-│   ├── Discovery/                        #   (research.md §a). Only project that references
-│   ├── Writing/                          #   RevitAPI.dll/RevitAPIUI.dll.
+│   ├── Selection/                        #   Imported by the three year projects below.
+│   ├── Discovery/                        #   Only this source tree talks to RevitAPI.dll
+│   ├── Writing/                          #   (via the year shells).
 │   ├── DialogSuppression/
-│   └── ExternalCommand/                  #   IExternalCommand + .addin (Application = App)
+│   ├── ExternalCommand/                  #   IExternalCommand (Application class = App)
+│   └── Year.props                        #   Shared TFM / HintPath / Debug deploy
+├── BatchParamUpdate.Adapters.Revit.2025/ # Thin year shell: net8.0-windows + Revit 2025 API + .addin
+├── BatchParamUpdate.Adapters.Revit.2026/ # Thin year shell: net8.0-windows + Revit 2026 API + .addin
+├── BatchParamUpdate.Adapters.Revit.2027/ # Thin year shell: net10.0-windows + Revit 2027 API + .addin
 │
 ├── BatchParamUpdate.Adapters.Persistence/ # IMetricsPort/ISessionRecorderPort:
 │                                          #   NDJSON + .txt under %TEMP%\juanManriqueHexagon
@@ -180,17 +185,17 @@ Revit
 ```
 
 **Structure Decision**: Single solution (`BatchParamUpdate.sln`) with
-projects split by hexagonal layer instead of one monolithic project or
-one project per Revit version. `Domain` and `Application` are
-multi-target-neutral Class Libraries (`net8.0`, no `-windows`, no WPF or
-Revit dependency) so `Tests.Unit` can exercise them with no UI or host
-loaded. Only `Adapters.Revit` (and the `App` / `ExternalCommand` types it
-exposes) need the conditional multi-targeting from `research.md` §a;
-`Core`, `Adapters.Persistence`, `UI.Wpf`, and `Installer` compile once
+projects split by hexagonal layer. Revit years are three thin projects
+that import one Shared Project (`Adapters.Revit`), not six
+solution configurations and not three separate solutions. `Domain` and
+`Application` are year-neutral Class Libraries (`net8.0`, no `-windows`,
+no WPF or Revit dependency) so `Tests.Unit` can exercise them with no UI
+or host loaded. Only the `Adapters.Revit.20XX` shells reference
+`RevitAPI.dll`/`RevitAPIUI.dll` (research.md §a). `Core`,
+`Adapters.Persistence`, `UI.Wpf`, and `Installer` compile once
 (`net8.0-windows`) and are referenced the same way from any Revit year
-because they never touch `RevitAPI.dll` directly. That minimizes the
-code surface that actually needs multi-targeting, which is the point of
-FR-048 ("from a single shared codebase/solution").
+because they never touch `RevitAPI.dll` directly. That keeps one shared
+codebase (FR-048) while still emitting a distinct add-in per year.
 
 The `.addin` manifest points at the `Application` class (`App`), not
 command-only registration. Ribbon wiring is adapter-only (YAGNI: no
@@ -203,7 +208,7 @@ command-only registration. Ribbon wiring is adapter-only (YAGNI: no
 
 | Deviation | Why it is needed | Simpler alternative rejected because |
 |---|---|---|
-| Conditional per-Revit-year multi-targeting (`net8.0-windows` / `net10.0-windows`, 6 build configurations) instead of a single TFM | FR-048 mandates 2025/2026/2027 from one codebase; research (research.md §a) confirmed a single TFM would be technically wrong because Revit 2027 ships on .NET 10 and Revit 2025/2026 are migrating to .NET 10 via 2025.5/2026.5 updates | A single TFM (`net8.0-windows`) does not compile against Revit 2027; one project per version (3 distinct `.sln`s) contradicts FR-048 explicitly |
+| Per-year adapter projects (`Adapters.Revit.2025`/`.2026`/`.2027`) sharing one `.projitems` source tree, with `net8.0-windows` vs `net10.0-windows` | FR-048 mandates 2025/2026/2027 from one codebase; research (research.md §a) confirmed a single TFM would be technically wrong because Revit 2027 ships on .NET 10, and a single csproj with year-named configurations cannot emit all three years in one solution build | A single TFM (`net8.0-windows`) does not compile against Revit 2027; six `Debug20XX` configurations produce only one year per build |
 | 7 ports/interfaces in `Domain` instead of calling the Revit API directly from business logic | Explicit architectural mandate (Assumptions → "Architecture") so discovery/classification/orchestration logic is testable without Revit running (Testability pillar) | Without ports, `Domain`/`Application` would depend on `RevitAPI.dll`, unit tests would require Revit installed and running, contradicting the mandated Testability pillar |
 
 ## Progress Tracking
