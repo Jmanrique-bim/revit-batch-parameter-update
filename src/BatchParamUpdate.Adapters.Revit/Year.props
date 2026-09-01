@@ -41,6 +41,8 @@
   <ItemGroup>
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Application\BatchParamUpdate.Application.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Core\BatchParamUpdate.Core.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Adapters.Persistence\BatchParamUpdate.Adapters.Persistence.csproj" />
     <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.UI.Wpf\BatchParamUpdate.UI.Wpf.csproj" />
   </ItemGroup>
 

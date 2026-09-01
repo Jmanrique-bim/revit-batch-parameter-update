@@ -7,5 +7,13 @@ public sealed class FakeSessionRecorderPort : ISessionRecorderPort
 {
     public List<MetricsRecord> Records { get; } = [];
 
-    public void Record(MetricsRecord record) => Records.Add(record);
+    public Exception? ThrowOnRecord { get; set; }
+
+    public void Record(MetricsRecord record)
+    {
+        if (ThrowOnRecord is not null)
+            throw ThrowOnRecord;
+
+        Records.Add(record);
+    }
 }
