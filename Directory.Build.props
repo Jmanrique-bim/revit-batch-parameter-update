@@ -3,6 +3,5 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12</LangVersion>
-    <Configurations>Debug;Release;Debug2025;Release2025;Debug2026;Release2026;Debug2027;Release2027</Configurations>
   </PropertyGroup>
 </Project>

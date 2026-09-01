@@ -22,7 +22,10 @@ Desktop project (Revit add-in + standalone installer), per `plan.md` → Project
 src/BatchParamUpdate.Core/                  # Cross-cutting: SessionFileLogger, runId, name sanitizing
 src/BatchParamUpdate.Domain/                #   Model/, Ports/, ErrorCatalog/ — ZERO RevitAPI.dll reference
 src/BatchParamUpdate.Application/           #   UseCases/ — orchestrates Domain + ports, no RevitAPI.dll
-src/BatchParamUpdate.Adapters.Revit/        #   App.cs, Resources/, Selection/, Discovery/, Writing/, DialogSuppression/, ExternalCommand/
+src/BatchParamUpdate.Adapters.Revit/        #   Shared source: App.cs, Resources/, Selection/, Discovery/, Writing/, DialogSuppression/, ExternalCommand/
+src/BatchParamUpdate.Adapters.Revit.2025/   #   Thin year shell + .addin (net8, Revit 2025)
+src/BatchParamUpdate.Adapters.Revit.2026/   #   Thin year shell + .addin (net8, Revit 2026)
+src/BatchParamUpdate.Adapters.Revit.2027/   #   Thin year shell + .addin (net10, Revit 2027)
 src/BatchParamUpdate.Adapters.Persistence/  #   NDJSON + .txt under %TEMP%\juanManriqueHexagon
 src/BatchParamUpdate.UI.Wpf/                #   ViewModels/, Views/
 src/BatchParamUpdate.Installer/             #   WPF host packaged with Velopack
@@ -35,32 +38,32 @@ tests/BatchParamUpdate.Tests.Unit/          #   Domain/, Application/, Fakes/
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Initialize the solution and the 8 hexagonal-layer projects (`plan.md` → Project Structure), including conditional per-Revit-year multi-targeting (FR-048), plus ribbon/`App` bootstrap so `IExternalApplication` exists before `IExternalCommand` (FR-049–FR-051, US0).
+**Purpose**: Initialize the solution and the hexagonal-layer projects (`plan.md` → Project Structure), including per-year Revit adapter shells that share one source tree (FR-048), plus ribbon/`App` bootstrap so `IExternalApplication` exists before `IExternalCommand` (FR-049–FR-051, US0).
 
 - [x] T001 Create solution file `BatchParamUpdate.sln` at the repository root
 - [x] T002 [P] Create Class Library project `BatchParamUpdate.Domain` (`net8.0`, no `-windows`) at `src/BatchParamUpdate.Domain/BatchParamUpdate.Domain.csproj`
 - [x] T003 [P] Create Class Library project `BatchParamUpdate.Core` (`net8.0-windows`) at `src/BatchParamUpdate.Core/BatchParamUpdate.Core.csproj`
 - [x] T004 Create Class Library project `BatchParamUpdate.Application` (`net8.0`) at `src/BatchParamUpdate.Application/BatchParamUpdate.Application.csproj`, referencing `Domain` (depends on T002)
 - [x] T005 Create project `BatchParamUpdate.Adapters.Persistence` (`net8.0-windows`) at `src/BatchParamUpdate.Adapters.Persistence/BatchParamUpdate.Adapters.Persistence.csproj`, referencing `Domain` and `Core` (depends on T002, T003)
-- [x] T006 Create project `BatchParamUpdate.Adapters.Revit` (initial TFM `net8.0-windows`) at `src/BatchParamUpdate.Adapters.Revit/BatchParamUpdate.Adapters.Revit.csproj`, referencing `Domain` (depends on T002)
-- [x] T007 Configure multi-targeting `<TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>` and the 6 per-year build configurations (`Debug2025`/`Release2025`, `Debug2026`/`Release2026`, `Debug2027`/`Release2027`) with property `RevitVersion` in `BatchParamUpdate.Adapters.Revit.csproj` (research.md §a, FR-048) (depends on T006)
-- [x] T008 Configure conditional references to `RevitAPI.dll`/`RevitAPIUI.dll` by `RevitVersion` (variable `HintPath`, `Private=false`, `CopyLocal=false`) and `DefineConstants` symbols (`REVIT2025_OR_GREATER`, `REVIT2026_OR_GREATER`, `REVIT2027_OR_GREATER`) in `BatchParamUpdate.Adapters.Revit.csproj` (research.md §a) (depends on T007)
+- [x] T006 Create Shared Project `BatchParamUpdate.Adapters.Revit` at `src/BatchParamUpdate.Adapters.Revit/` (`.shproj` + `.projitems` + `Year.props`), referencing `Domain` from the year shells (depends on T002)
+- [x] T007 Create thin year projects `BatchParamUpdate.Adapters.Revit.2025` (`net8.0-windows`), `.2026` (`net8.0-windows`), and `.2027` (`net10.0-windows`) that import the shared `.projitems` (research.md §a, FR-048) (depends on T006)
+- [x] T008 Configure each year project with that year's `RevitAPI.dll`/`RevitAPIUI.dll` (`HintPath` via `RevitYear`, `Private=false`, `CopyLocal=false`) and `DefineConstants` symbols (`REVIT2025_OR_GREATER`, `REVIT2026_OR_GREATER`, `REVIT2027_OR_GREATER`) in `src/BatchParamUpdate.Adapters.Revit/Year.props` (research.md §a) (depends on T007)
 - [x] T009 [P] Create WPF project `BatchParamUpdate.UI.Wpf` (`net8.0-windows`) at `src/BatchParamUpdate.UI.Wpf/BatchParamUpdate.UI.Wpf.csproj`, referencing `Application` and `Domain` (depends on T002, T004)
 - [x] T010 [P] Create WPF project `BatchParamUpdate.Installer` (`net8.0-windows`) at `src/BatchParamUpdate.Installer/BatchParamUpdate.Installer.csproj`
 - [x] T011 Create xUnit test project `BatchParamUpdate.Tests.Unit` at `tests/BatchParamUpdate.Tests.Unit/BatchParamUpdate.Tests.Unit.csproj`, referencing only `Domain` and `Application` (research.md §g) (depends on T002, T004)
-- [x] T012 Add the 8 projects (`Domain`, `Core`, `Application`, `Adapters.Persistence`, `Adapters.Revit`, `UI.Wpf`, `Installer`, `Tests.Unit`) to `BatchParamUpdate.sln` (depends on T002–T011)
+- [x] T012 Add the hexagonal projects (`Domain`, `Core`, `Application`, `Adapters.Persistence`, `Adapters.Revit` shared + `.2025`/`.2026`/`.2027`, `UI.Wpf`, `Installer`, `Tests.Unit`) to `BatchParamUpdate.sln` (depends on T002–T011)
 - [x] T013 [P] Add `Directory.Build.props` at the root with shared `Nullable=enable`, `ImplicitUsings=enable`, and `LangVersion` for all projects
 - [x] T014 [P] Add `.editorconfig` at the root with the project's C# style rules
 
 ### Ribbon & Application bootstrap (US0)
 
-- [x] T015 [P] Copy the assignment lineal-color optimization icons from `C:\Users\Juan -- IP\Descargas\icons8-optimization-lineal-color` (`icons8-optimization-64.png`, `icons8-optimization-100.png`) into `src/BatchParamUpdate.Adapters.Revit/Resources/` and include them as Content/EmbeddedResource in `BatchParamUpdate.Adapters.Revit.csproj` (FR-051, research.md §i) (depends on T006)
+- [x] T015 [P] Copy the assignment lineal-color optimization icons from `C:\Users\Juan -- IP\Descargas\icons8-optimization-lineal-color` (`icons8-optimization-64.png`, `icons8-optimization-100.png`) into `src/BatchParamUpdate.Adapters.Revit/Resources/` and include them as EmbeddedResource in `BatchParamUpdate.Adapters.Revit.projitems` (FR-051, research.md §i) (depends on T006)
 - [x] T016 Implement `App` as `IExternalApplication` with `OnStartup`/`OnShutdown` at `src/BatchParamUpdate.Adapters.Revit/App.cs` (FR-049, research.md §i) (depends on T008)
 - [x] T017 Create a custom `RibbonPanel` and a dedicated `PushButton` in `App.OnStartup` targeting `BatchParameterUpdateCommand` (not a generic Add-Ins tab dump) at `src/BatchParamUpdate.Adapters.Revit/App.cs` (FR-049/FR-050) (depends on T016)
-- [x] T018 Point the `.addin` manifest `Application` class at `App` (`IExternalApplication`), not command-only registration, at `src/BatchParamUpdate.Adapters.Revit/ExternalCommand/BatchParamUpdate.addin` (FR-049, research.md §i) (depends on T016)
+- [x] T018 Point each year `.addin` manifest `Application` class at `App` (`IExternalApplication`), not command-only registration, at `src/BatchParamUpdate.Adapters.Revit.2025/BatchParamUpdate.Adapters.Revit.2025.addin` (and `.2026` / `.2027`) (FR-049, research.md §i) (depends on T016)
 - [x] T019 Wire small/large ribbon images on the `PushButton` (16px `Image` / 32px `LargeImage`, derived at implementation from the 64/100 PNGs if needed) from `src/BatchParamUpdate.Adapters.Revit/Resources/` in `src/BatchParamUpdate.Adapters.Revit/App.cs` (FR-051, research.md §i) (depends on T015, T017)
 
-**Checkpoint**: Compilable solution with the 8 empty projects referencing each other correctly, plus `App` ribbon bootstrap and icon resources in place.
+**Checkpoint**: Compilable solution with hexagonal projects referencing each other correctly, three year adapter shells sharing one source tree, plus `App` ribbon bootstrap and icon resources in place.
 
 ---
 
@@ -255,10 +258,10 @@ tests/BatchParamUpdate.Tests.Unit/          #   Domain/, Application/, Fakes/
 - [ ] T113 [P] Unit test: `InstallerPackage.SupportedRevitYears` is a closed list `{2025, 2026, 2027}` and never offers install for a year outside it (`tests/BatchParamUpdate.Tests.Unit/Domain/InstallerPackageTests.cs`, FR-046, SC-009)
 - [ ] T114 [P] Create entity `InstallerPackage` (`src/BatchParamUpdate.Domain/Model/InstallerPackage.cs`: `SupportedRevitYears`, `DetectedRevitYears`, `Actions`, data-model.md §10) (depends on T111)
 - [ ] T115 Implement `RevitInstallerAdapter.DetectInstalledRevitYears` reading `HKEY_LOCAL_MACHINE\SOFTWARE\Autodesk\Revit\{year}` (and its `WOW6432Node` reflection) (`src/BatchParamUpdate.Installer/RevitInstallerAdapter.cs`, research.md §h, FR-047) (depends on T111)
-- [ ] T116 Implement `RevitInstallerAdapter.Install`/`Update`/`Uninstall` copying the `Adapters.Revit` assembly and its `.addin` manifest (`Application` = `App`) per year, resolving the Revit 2027-specific destination path (`src/BatchParamUpdate.Installer/RevitInstallerAdapter.cs`, research.md §h Revit 2027 risk) (depends on T115)
+- [ ] T116 Implement `RevitInstallerAdapter.Install`/`Update`/`Uninstall` copying the matching `Adapters.Revit.{year}` assembly and its `.addin` manifest (`Application` = `App`) per year, resolving the Revit 2027-specific destination path (`src/BatchParamUpdate.Installer/RevitInstallerAdapter.cs`, research.md §h Revit 2027 risk) (depends on T115)
 - [ ] T117 [P] Create `InstallerViewModel` exposing detected years and Install/Update/Uninstall actions (`src/BatchParamUpdate.Installer/ViewModels/InstallerViewModel.cs`, FR-047) (depends on T114)
 - [ ] T118 [P] Create the installer WPF view (detected-version list + action buttons) (`src/BatchParamUpdate.Installer/Views/InstallerWindow.xaml`) (depends on T117)
-- [ ] T119 [P] Create per-year `.addin` manifests (2025/2026/2027) with matching add-in paths, including Revit 2027's new schema (`PublicAssemblies`/`Dependencies`), each registering `App` as the Application class (`src/BatchParamUpdate.Adapters.Revit/ExternalCommand/BatchParamUpdate.2025.addin`, `.2026.addin`, `.2027.addin`, research.md §h) (depends on T018)
+- [x] T119 [P] Create per-year `.addin` manifests (2025/2026/2027) with matching add-in paths, each registering `App` as the Application class (`src/BatchParamUpdate.Adapters.Revit.2025/BatchParamUpdate.Adapters.Revit.2025.addin`, `.2026.addin`, `.2027.addin`). Revit 2027 extra schema keys (`PublicAssemblies`/`Dependencies`) remain to re-verify on a real 2027 install (research.md §h) (depends on T018)
 - [ ] T120 [P] Configure the Velopack packaging script (`vpk pack -u BatchParamUpdate -e Installer.exe`) for the `Installer` project (`src/BatchParamUpdate.Installer/pack.ps1`, research.md §h, FR-044)
 - [ ] T121 [P] Write repository `README.md` stating explicitly which Revit versions the add-in supports (2025/2026/2027) and that no other version is supported (FR-045/FR-046, SC-009)
 - [ ] T122 [P] In-memory end-to-end unit test (all fakes) of the full Instance path: selection → discovery → replacement → execution → summary (`tests/BatchParamUpdate.Tests.Unit/Application/EndToEndInstancePathTests.cs`)

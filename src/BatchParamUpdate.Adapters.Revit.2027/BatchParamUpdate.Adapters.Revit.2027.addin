@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>Batch Parameter Update</Name>
+    <Assembly>BatchParamUpdate\BatchParamUpdate.Adapters.Revit.2027.dll</Assembly>
+    <FullClassName>BatchParamUpdate.Adapters.Revit.App</FullClassName>
+    <AddInId>8f3a2c1e-6b47-4d90-9e5a-1c2d3e4f5a6b</AddInId>
+    <VendorId>JPMA</VendorId>
+    <VendorDescription>Juan Pablo Manrique</VendorDescription>
+  </AddIn>
+</RevitAddIns>
