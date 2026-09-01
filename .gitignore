@@ -9,3 +9,8 @@ packages/
 *.snk
 .env
 *.addin.user
+
+.cursor/
+.specify/
+ref docs/
+PR_SUMMARY.md
