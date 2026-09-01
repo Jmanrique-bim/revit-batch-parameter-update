@@ -101,19 +101,19 @@ tests/BatchParamUpdate.Tests.Unit/          #   Domain/, Application/, Fakes/
 
 ### Tests for User Story 1
 
-- [ ] T038 [P] [US1] Unit test: `SelectionContext.IsValid` is `false` when `ElementRefs` is empty (`tests/BatchParamUpdate.Tests.Unit/Domain/SelectionContextTests.cs`, FR-006)
-- [ ] T039 [US1] Unit test: `EstablishSelectionUseCase` adopts the pre-existing selection without invoking the manual pick when `GetPreExistingSelection` returns elements (`tests/BatchParamUpdate.Tests.Unit/Application/EstablishSelectionUseCaseTests.cs`, FR-001/FR-002)
+- [x] T038 [P] [US1] Unit test: `SelectionContext.IsValid` is `false` when `ElementRefs` is empty (`tests/BatchParamUpdate.Tests.Unit/Domain/SelectionContextTests.cs`, FR-006)
+- [x] T039 [US1] Unit test: `EstablishSelectionUseCase` adopts the pre-existing selection without invoking the manual pick when `GetPreExistingSelection` returns elements (`tests/BatchParamUpdate.Tests.Unit/Application/EstablishSelectionUseCaseTests.cs`, FR-001/FR-002)
 
 ### Implementation for User Story 1
 
-- [ ] T040 [P] [US1] Create enum `SelectionOrigin` (`src/BatchParamUpdate.Domain/Model/SelectionOrigin.cs`: `PreExisting`, `ManualPick`)
-- [ ] T041 [US1] Create entity `SelectionContext` with `IsValid` invariant (`src/BatchParamUpdate.Domain/Model/SelectionContext.cs`, data-model.md §1) (depends on T020, T040)
-- [ ] T042 [US1] Create interface `IElementSelectionPort` with `GetPreExistingSelection`/`PromptManualSelection` (`src/BatchParamUpdate.Domain/Ports/IElementSelectionPort.cs`, contracts/ports.md §1) (depends on T041)
-- [ ] T043 [P] [US1] Create in-memory fake of `IElementSelectionPort` for tests (`tests/BatchParamUpdate.Tests.Unit/Fakes/FakeElementSelectionPort.cs`) (depends on T042)
-- [ ] T044 [US1] Create `EstablishSelectionUseCase` in `Application` that resolves `GetPreExistingSelection` at session start (`src/BatchParamUpdate.Application/UseCases/EstablishSelectionUseCase.cs`, FR-001/FR-002) (depends on T042, T023)
-- [ ] T045 [US1] Implement `RevitElementSelectionPort.GetPreExistingSelection` with `UIDocument.Selection.GetElementIds()` (`src/BatchParamUpdate.Adapters.Revit/Selection/RevitElementSelectionPort.cs`) (depends on T042)
-- [ ] T046 [P] [US1] Create `SelectElementsViewModel` with property `IsSelectElementsEnabled` derived from `SelectionOrigin` (`src/BatchParamUpdate.UI.Wpf/ViewModels/SelectElementsViewModel.cs`, FR-003) (depends on T041)
-- [ ] T047 [P] [US1] Bind the "Select Elements" control to `IsSelectElementsEnabled` on the main window, disabled when `Origin=PreExisting` (`src/BatchParamUpdate.UI.Wpf/Views/MainWindow.xaml`) (depends on T046)
+- [x] T040 [P] [US1] Create enum `SelectionOrigin` (`src/BatchParamUpdate.Domain/Model/SelectionOrigin.cs`: `PreExisting`, `ManualPick`)
+- [x] T041 [US1] Create entity `SelectionContext` with `IsValid` invariant (`src/BatchParamUpdate.Domain/Model/SelectionContext.cs`, data-model.md §1) (depends on T020, T040)
+- [x] T042 [US1] Create interface `IElementSelectionPort` with `GetPreExistingSelection`/`PromptManualSelection` (`src/BatchParamUpdate.Domain/Ports/IElementSelectionPort.cs`, contracts/ports.md §1) (depends on T041)
+- [x] T043 [P] [US1] Create in-memory fake of `IElementSelectionPort` for tests (`tests/BatchParamUpdate.Tests.Unit/Fakes/FakeElementSelectionPort.cs`) (depends on T042)
+- [x] T044 [US1] Create `EstablishSelectionUseCase` in `Application` that resolves `GetPreExistingSelection` at session start (`src/BatchParamUpdate.Application/UseCases/EstablishSelectionUseCase.cs`, FR-001/FR-002) (depends on T042, T023)
+- [x] T045 [US1] Implement `RevitElementSelectionPort.GetPreExistingSelection` with `UIDocument.Selection.GetElementIds()` (`src/BatchParamUpdate.Adapters.Revit/Selection/RevitElementSelectionPort.cs`) (depends on T042)
+- [x] T046 [P] [US1] Create `SelectElementsViewModel` with property `IsSelectElementsEnabled` derived from `SelectionOrigin` (`src/BatchParamUpdate.UI.Wpf/ViewModels/SelectElementsViewModel.cs`, FR-003) (depends on T041)
+- [x] T047 [P] [US1] Bind the "Select Elements" control to `IsSelectElementsEnabled` on the main window, disabled when `Origin=PreExisting` (`src/BatchParamUpdate.UI.Wpf/Views/MainWindow.xaml`) (depends on T046)
 
 **Checkpoint**: US1 functional and independently testable.
 
