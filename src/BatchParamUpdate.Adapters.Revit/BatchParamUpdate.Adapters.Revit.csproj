@@ -1,0 +1,60 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>BatchParamUpdate.Adapters.Revit</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+    <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <RevitVersion Condition="'$(RevitVersion)'==''">2025</RevitVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(Configuration.Contains('2026'))">
+    <RevitVersion>2026</RevitVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="$(Configuration.Contains('2027'))">
+    <RevitVersion>2027</RevitVersion>
+  </PropertyGroup>
+
+  <!-- research.md §a: net8 for 2025/2026, net10 for 2027. Default build is 2025. -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0-windows</TargetFrameworks>
+    <TargetFrameworks Condition="'$(RevitVersion)'=='2027'">net10.0-windows</TargetFrameworks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(RevitVersion)'=='2025'">
+    <DefineConstants>$(DefineConstants);REVIT2025;REVIT2025_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitVersion)'=='2026'">
+    <DefineConstants>$(DefineConstants);REVIT2026;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitVersion)'=='2027'">
+    <DefineConstants>$(DefineConstants);REVIT2027;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER;REVIT2027_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RevitInstallDir>$(ProgramW6432)\Autodesk\Revit $(RevitVersion)</RevitInstallDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+      <CopyLocal>false</CopyLocal>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+      <CopyLocal>false</CopyLocal>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\icons8-optimization-64.png" />
+    <EmbeddedResource Include="Resources\icons8-optimization-100.png" />
+    <None Include="ExternalCommand\BatchParamUpdate.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
