@@ -10,7 +10,7 @@ namespace BatchParamUpdate.UI.Wpf.ViewModels;
 public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
 {
     private readonly DiscoverParametersUseCase _useCase;
-    private readonly SelectionContext _scope;
+    private SelectionContext _scope;
     private readonly Session _session;
     private ParameterCandidate? _selectedInstance;
     private ParameterCandidate? _selectedType;
@@ -87,6 +87,12 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
     public ICommand ChooseParameterCommand { get; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void Retarget(SelectionContext scope)
+    {
+        _scope = scope;
+        RefreshFilters();
+    }
 
     private void RefreshFilters()
     {

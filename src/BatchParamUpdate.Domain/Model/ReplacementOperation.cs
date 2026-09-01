@@ -21,4 +21,7 @@ public sealed class ReplacementOperation
     public ExecutionScope ExecutionScope { get; }
 
     public bool HasReplacementValue => !string.IsNullOrWhiteSpace(NewValue);
+
+    public ReplacementOperation WithNewValue(string newValue)
+        => new(TargetParameter, newValue, ExecutionScope);
 }

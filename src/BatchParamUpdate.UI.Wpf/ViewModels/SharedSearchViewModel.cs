@@ -8,7 +8,7 @@ public sealed class SharedSearchViewModel : INotifyPropertyChanged
 {
     public SharedSearchViewModel(SharedSearchQuery query) => Query = query;
 
-    public SharedSearchQuery Query { get; }
+    public SharedSearchQuery Query { get; private set; }
 
     public string Text
     {
@@ -21,6 +21,13 @@ public sealed class SharedSearchViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             TextChanged?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    public void ReplaceSets(InstanceParameterCandidateSet instance, TypeParameterCandidateSet type)
+    {
+        Query = new SharedSearchQuery(instance, type, Query.Text);
+        OnPropertyChanged(nameof(Text));
+        TextChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public event EventHandler? TextChanged;
