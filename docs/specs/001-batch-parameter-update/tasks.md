@@ -130,16 +130,16 @@ tests/BatchParamUpdate.Tests.Unit/          #   Domain/, Application/, Fakes/
 
 ### Tests for User Story 2
 
-- [ ] T048 [P] [US2] Unit test: `SelectionContext` with `Origin=ManualPick` leaves the "Select Elements" control enabled (`tests/BatchParamUpdate.Tests.Unit/Domain/SelectionContextTests.cs`, FR-004)
-- [ ] T049 [US2] Unit test: `EstablishSelectionUseCase` invokes `PromptManualSelection` when no pre-existing selection exists (`tests/BatchParamUpdate.Tests.Unit/Application/EstablishSelectionUseCaseTests.cs`, FR-005)
-- [ ] T050 [US2] Unit test: `EstablishSelectionUseCase` leaves the session without a valid scope when the user cancels the manual pick (`PromptManualSelection` returns `null`) (`tests/BatchParamUpdate.Tests.Unit/Application/EstablishSelectionUseCaseTests.cs`, FR-006, US2 scenario 3)
+- [X] T048 [P] [US2] Unit test: `SelectionContext` with `Origin=ManualPick` leaves the "Select Elements" control enabled (`tests/BatchParamUpdate.Tests.Unit/Domain/SelectionContextTests.cs`, FR-004)
+- [X] T049 [US2] Unit test: `EstablishSelectionUseCase` invokes `PromptManualSelection` when no pre-existing selection exists (`tests/BatchParamUpdate.Tests.Unit/Application/EstablishSelectionUseCaseTests.cs`, FR-005)
+- [X] T050 [US2] Unit test: `EstablishSelectionUseCase` leaves the session without a valid scope when the user cancels the manual pick (`PromptManualSelection` returns `null`) (`tests/BatchParamUpdate.Tests.Unit/Application/EstablishSelectionUseCaseTests.cs`, FR-006, US2 scenario 3)
 
 ### Implementation for User Story 2
 
-- [ ] T051 [US2] Extend `EstablishSelectionUseCase` to invoke `PromptManualSelection` when there is no pre-existing selection and to handle cancellation (`src/BatchParamUpdate.Application/UseCases/EstablishSelectionUseCase.cs`) (depends on T044)
-- [ ] T052 [US2] Implement `RevitElementSelectionPort.PromptManualSelection` with `UIDocument.Selection.PickObjects(...)`, returning `null` if the user cancels (`src/BatchParamUpdate.Adapters.Revit/Selection/RevitElementSelectionPort.cs`) (depends on T045)
-- [ ] T053 [P] [US2] Add a "Select Elements" command to `SelectElementsViewModel` that invokes the manual pick (`src/BatchParamUpdate.UI.Wpf/ViewModels/SelectElementsViewModel.cs`) (depends on T046)
-- [ ] T054 [P] [US2] Add a "no elements in scope" indicator to the main window when `SelectionContext.IsValid` is `false` (`src/BatchParamUpdate.UI.Wpf/Views/MainWindow.xaml`) (depends on T047)
+- [X] T051 [US2] Extend `EstablishSelectionUseCase` to invoke `PromptManualSelection` when there is no pre-existing selection and to handle cancellation (`src/BatchParamUpdate.Application/UseCases/EstablishSelectionUseCase.cs`) (depends on T044)
+- [X] T052 [US2] Implement `RevitElementSelectionPort.PromptManualSelection` with `UIDocument.Selection.PickObjects(...)`, returning `null` if the user cancels (`src/BatchParamUpdate.Adapters.Revit/Selection/RevitElementSelectionPort.cs`) (depends on T045)
+- [X] T053 [P] [US2] Add a "Select Elements" command to `SelectElementsViewModel` that invokes the manual pick (`src/BatchParamUpdate.UI.Wpf/ViewModels/SelectElementsViewModel.cs`) (depends on T046)
+- [X] T054 [P] [US2] Add a "no elements in scope" indicator to the main window when `SelectionContext.IsValid` is `false` (`src/BatchParamUpdate.UI.Wpf/Views/MainWindow.xaml`) (depends on T047)
 
 **Checkpoint**: US1 and US2 work independently, covering the two selection flows mandated by the stakeholder.
 

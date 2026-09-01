@@ -1,5 +1,6 @@
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+using Autodesk.Revit.UI.Selection;
 using BatchParamUpdate.Domain.Model;
 using BatchParamUpdate.Domain.Ports;
 
@@ -23,6 +24,25 @@ public sealed class RevitElementSelectionPort : IElementSelectionPort
         return new SelectionContext(refs, SelectionOrigin.PreExisting);
     }
 
-    // ponytail: T052 (US2) implements PickObjects; US1 never calls this path.
-    public SelectionContext? PromptManualSelection() => null;
+    public SelectionContext? PromptManualSelection()
+    {
+        try
+        {
+            var picked = _uidoc.Selection.PickObjects(ObjectType.Element, "Select elements");
+            var refs = new List<ElementRef>(picked.Count);
+            foreach (var reference in picked)
+            {
+                var element = _uidoc.Document.GetElement(reference.ElementId);
+                refs.Add(new ElementRef(
+                    reference.ElementId.ToString(),
+                    element?.Category?.Name ?? string.Empty));
+            }
+
+            return new SelectionContext(refs, SelectionOrigin.ManualPick);
+        }
+        catch (Autodesk.Revit.Exceptions.OperationCanceledException)
+        {
+            return null;
+        }
+    }
 }
