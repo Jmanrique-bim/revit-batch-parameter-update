@@ -197,3 +197,16 @@ explicitly annotated as non-simulable in the evaluation environment,
 without contradicting documented behavior), feature
 `001-batch-parameter-update` is validated end-to-end and ready for
 implementation work against this plan's design.
+
+## Validation results (implementation pass, 2026-09-01)
+
+| Check | Result |
+|---|---|
+| In-memory Instance path (T122) | PASS — `dotnet test` (`EndToEndInstancePathTests`) |
+| In-memory Type path + inline warning (T123) | PASS — `dotnet test` (`EndToEndTypePathTests`) |
+| Domain/Application unit suite | PASS — see test run on this branch |
+| Quickstart scenarios 1–6 against a live Revit session | **NOT RUN** — this implementation environment has no licensed Revit host |
+| Type-path write on a Model Group member (`research.md` risk) | **NOT RE-VERIFIED** on a live model; Type path still writes the shared type object, Instance path still skips grouped elements |
+| Revit 2027 `.addin` extra schema keys (`PublicAssemblies` / `Dependencies`) | **NOT RE-VERIFIED** on a real 2027 install; 2027 manifest still registers `App` as Application class. Extra isolation keys remain to add if the host requires them |
+
+Evaluator: run scenarios 1–6 from this document on Revit 2025, 2026, or 2027 (launch from the dedicated ribbon button) before treating host behavior as confirmed.

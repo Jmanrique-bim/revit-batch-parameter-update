@@ -4,5 +4,9 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>BatchParamUpdate.Installer</RootNamespace>
+    <AssemblyName>Installer</AssemblyName>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
+  </ItemGroup>
 </Project>
