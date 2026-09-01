@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:BatchParamUpdate.UI.Wpf.Views"
         Title="Batch Parameter Update"
-        Height="560"
+        Height="720"
         Width="840">
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
@@ -14,6 +14,9 @@
       <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
       <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
     <Button x:Name="SelectElementsButton"
@@ -58,6 +61,44 @@
                  Foreground="#B00020"
                  TextWrapping="Wrap"
                  Text="{Binding AdvanceErrorMessage}" />
+    </StackPanel>
+    <StackPanel x:Name="ReplacementPanel" Grid.Row="5" Margin="0,12,0,0">
+      <TextBlock Text="Replacement value" Margin="0,0,0,4" />
+      <TextBox MinHeight="28"
+               VerticalContentAlignment="Center"
+               Text="{Binding NewValue, UpdateSourceTrigger=PropertyChanged}" />
+      <TextBlock Margin="0,4,0,0"
+                 Foreground="#B00020"
+                 TextWrapping="Wrap"
+                 Text="{Binding ValidationMessage}" />
+      <Button Margin="0,8,0,0"
+              Content="Run update"
+              Command="{Binding RunCommand}"
+              HorizontalAlignment="Left"
+              Padding="12,6"
+              MinWidth="140" />
+    </StackPanel>
+    <ProgressBar x:Name="ExecutionProgress"
+                 Grid.Row="6"
+                 Margin="0,12,0,0"
+                 Height="16"
+                 IsIndeterminate="True"
+                 Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}" />
+    <StackPanel x:Name="SummaryPanel" Grid.Row="7" Margin="0,12,0,0">
+      <TextBlock FontWeight="SemiBold" Text="{Binding Headline}" TextWrapping="Wrap" />
+      <ItemsControl Margin="0,8,0,0"
+                    ItemsSource="{Binding Skips}"
+                    Visibility="{Binding HasSkips, Converter={StaticResource BooleanToVisibilityConverter}}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
+              <Run Text="{Binding Element.Id, Mode=OneWay}" />
+              <Run Text=" — " />
+              <Run Text="{Binding Message, Mode=OneWay}" />
+            </TextBlock>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
     </StackPanel>
   </Grid>
 </Window>

@@ -12,7 +12,10 @@ public partial class MainWindow
     public void Bind(
         SelectElementsViewModel select,
         SharedSearchViewModel search,
-        ParameterDiscoveryViewModel discovery)
+        ParameterDiscoveryViewModel discovery,
+        ReplacementValueViewModel replacement,
+        BatchExecutionViewModel execution,
+        BatchSummaryViewModel summary)
     {
         SelectElementsButton.DataContext = select;
         EmptyScopeBanner.DataContext = select;
@@ -21,5 +24,8 @@ public partial class MainWindow
         TypeDialog.DataContext = discovery;
         ChooseParameterButton.DataContext = discovery;
         AdvanceErrorBanner.DataContext = discovery;
+        ReplacementPanel.DataContext = replacement;
+        ExecutionProgress.DataContext = execution;
+        SummaryPanel.DataContext = summary;
     }
 }
