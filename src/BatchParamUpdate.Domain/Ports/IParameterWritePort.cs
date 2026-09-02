@@ -4,13 +4,9 @@ namespace BatchParamUpdate.Domain.Ports;
 
 public interface IParameterWritePort
 {
-    BatchExecutionResult? ExecuteInstanceUpdate(
+    BatchExecutionResult? Execute(
         SelectionContext scope,
         ParameterCandidate targetParameter,
-        string newValue);
-
-    BatchExecutionResult? ExecuteTypeUpdate(
-        SelectionContext scope,
-        ParameterCandidate targetParameter,
-        string newValue);
+        string newValue,
+        IProgress<BatchProgress> progress);
 }
