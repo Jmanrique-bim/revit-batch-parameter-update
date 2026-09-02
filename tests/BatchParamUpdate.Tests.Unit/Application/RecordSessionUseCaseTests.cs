@@ -14,13 +14,17 @@ public sealed class RecordSessionUseCaseTests
     public void Start_WritesSessionStart()
     {
         var recorder = new FakeSessionRecorderPort();
-        var useCase = new RecordSessionUseCase(recorder, new FakeLoggerPort(), Identity);
+        var logger = new FakeLoggerPort();
+        var useCase = new RecordSessionUseCase(recorder, logger, Identity);
 
         useCase.Start();
+        useCase.RecordSearch("mark", ["Mark"], ["Type Mark"]);
 
-        Assert.Single(recorder.Records);
+        Assert.Equal(2, recorder.Records.Count);
         Assert.IsType<SessionStart>(recorder.Records[0]);
         Assert.Equal(Identity.SessionId, recorder.Records[0].SessionId);
+        Assert.Contains(logger.Lines, l => l.Contains("Session started", StringComparison.Ordinal) && l.Contains(Identity.SessionId));
+        Assert.Contains(logger.Lines, l => l.Contains("Search", StringComparison.Ordinal) && l.Contains("mark"));
     }
 
     [Fact]

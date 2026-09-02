@@ -12,8 +12,8 @@ public sealed class ParameterCandidateSetTests
         var door = new ElementRef("2", "Doors");
         var set = new InstanceParameterCandidateSet(
         [
-            new("Comments", ParameterBinding.Instance, [wall]),
-            new("Comments", ParameterBinding.Instance, [door]),
+            new("Comments", ParameterBinding.Instance, [wall], ["A"]),
+            new("Comments", ParameterBinding.Instance, [door], ["B"]),
             new("Mark", ParameterBinding.Instance, [wall]),
             new("Type Comments", ParameterBinding.Type, [wall])
         ]);
@@ -23,6 +23,7 @@ public sealed class ParameterCandidateSetTests
         Assert.Equal(1, set.Candidates.Count(c => c.Name == "Comments"));
         var comments = set.Candidates.Single(c => c.Name == "Comments");
         Assert.Equal(2, comments.SourceElementRefs.Count);
+        Assert.Equal(["A", "B"], comments.ObservedValues);
     }
 
     [Fact]

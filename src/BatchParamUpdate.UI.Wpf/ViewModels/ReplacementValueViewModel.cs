@@ -45,6 +45,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(ValidationMessage));
             OnPropertyChanged(nameof(CanRun));
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
@@ -73,7 +74,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         try
         {
             var result = _run.Execute(_session, operation, _scope());
-            _summary.Show(result, _run.Error);
+            _summary.Show(result, _run.Error, operation);
         }
         finally
         {

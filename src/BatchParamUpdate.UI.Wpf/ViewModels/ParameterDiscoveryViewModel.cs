@@ -26,7 +26,6 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
         _session = session;
         Search = search;
         Search.TextChanged += (_, _) => RefreshFilters();
-        ChooseParameterCommand = new RelayCommand(Advance);
         RefreshFilters();
     }
 
@@ -56,6 +55,8 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
 
             OnPropertyChanged();
             OnPropertyChanged(nameof(ShowWideBlastWarning));
+            if (value is not null)
+                Advance();
         }
     }
 
@@ -75,6 +76,8 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
 
             OnPropertyChanged();
             OnPropertyChanged(nameof(ShowWideBlastWarning));
+            if (value is not null)
+                Advance();
         }
     }
 
@@ -84,7 +87,27 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
 
     public ReplacementOperation? Operation { get; private set; }
 
-    public ICommand ChooseParameterCommand { get; }
+    public string CurrentValueSummary
+    {
+        get
+        {
+            if (Operation is null)
+                return "";
+
+            var name = Operation.TargetParameter.Name;
+            var values = Operation.TargetParameter.ObservedValues
+                .Select(v => string.IsNullOrEmpty(v) ? "(empty)" : v)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            if (values.Count == 0)
+                return $"No current value for {name}.";
+            if (values.Count == 1)
+                return $"Current value of {name}: {values[0]}";
+            return $"Current values of {name}: {string.Join(", ", values)}";
+        }
+    }
+
+    public bool HasCurrentValueSummary => Operation is not null;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -113,7 +136,10 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
             : null;
         OnPropertyChanged(nameof(AdvanceErrorMessage));
         OnPropertyChanged(nameof(Operation));
+        OnPropertyChanged(nameof(CurrentValueSummary));
+        OnPropertyChanged(nameof(HasCurrentValueSummary));
         OnPropertyChanged(nameof(ShowWideBlastWarning));
+        CommandManager.InvalidateRequerySuggested();
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

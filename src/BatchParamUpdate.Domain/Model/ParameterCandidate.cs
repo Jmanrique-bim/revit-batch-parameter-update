@@ -3,8 +3,17 @@ namespace BatchParamUpdate.Domain.Model;
 public sealed record ParameterCandidate(
     string Name,
     ParameterBinding Binding,
-    IReadOnlyList<ElementRef> SourceElementRefs)
+    IReadOnlyList<ElementRef> SourceElementRefs,
+    IReadOnlyList<string> ObservedValues)
 {
+    public ParameterCandidate(
+        string name,
+        ParameterBinding binding,
+        IReadOnlyList<ElementRef> sourceElementRefs)
+        : this(name, binding, sourceElementRefs, [])
+    {
+    }
+
     internal static IReadOnlyList<ParameterCandidate> Deduplicate(
         IEnumerable<ParameterCandidate> candidates,
         ParameterBinding binding)
@@ -21,7 +30,15 @@ public sealed record ParameterCandidate(
                     .Concat(candidate.SourceElementRefs)
                     .Distinct()
                     .ToList();
-                map[candidate.Name] = existing with { SourceElementRefs = merged };
+                var values = existing.ObservedValues
+                    .Concat(candidate.ObservedValues)
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+                map[candidate.Name] = existing with
+                {
+                    SourceElementRefs = merged,
+                    ObservedValues = values
+                };
             }
             else
             {

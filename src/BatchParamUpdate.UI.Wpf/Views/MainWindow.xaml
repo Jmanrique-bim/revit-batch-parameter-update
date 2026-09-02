@@ -49,20 +49,18 @@
       <views:InstanceParameterDialog x:Name="InstanceDialog" Grid.Column="0" />
       <views:TypeParameterDialog x:Name="TypeDialog" Grid.Column="2" />
     </Grid>
-    <StackPanel Grid.Row="4" Margin="0,12,0,0">
-      <Button x:Name="ChooseParameterButton"
-              Content="Continue"
-              Command="{Binding ChooseParameterCommand}"
-              HorizontalAlignment="Left"
-              Padding="12,6"
-              MinWidth="140" />
-      <TextBlock x:Name="AdvanceErrorBanner"
-                 Margin="0,8,0,0"
-                 Foreground="#B00020"
-                 TextWrapping="Wrap"
-                 Text="{Binding AdvanceErrorMessage}" />
-    </StackPanel>
+    <TextBlock x:Name="AdvanceErrorBanner"
+               Grid.Row="4"
+               Margin="0,12,0,0"
+               Foreground="#B00020"
+               TextWrapping="Wrap"
+               Text="{Binding AdvanceErrorMessage}" />
     <StackPanel x:Name="ReplacementPanel" Grid.Row="5" Margin="0,12,0,0">
+      <TextBlock x:Name="CurrentValueBanner"
+                 Margin="0,0,0,8"
+                 TextWrapping="Wrap"
+                 Text="{Binding CurrentValueSummary}"
+                 Visibility="{Binding HasCurrentValueSummary, Converter={StaticResource BooleanToVisibilityConverter}}" />
       <TextBlock Text="Replacement value" Margin="0,0,0,4" />
       <TextBox MinHeight="28"
                VerticalContentAlignment="Center"
@@ -92,7 +90,7 @@
         <ItemsControl.ItemTemplate>
           <DataTemplate>
             <TextBlock Margin="0,2,0,0" TextWrapping="Wrap">
-              <Run Text="{Binding Element.Id, Mode=OneWay}" />
+              <Run Text="{Binding Element.DisplayLabel, Mode=OneWay}" />
               <Run Text=" — " />
               <Run Text="{Binding Message, Mode=OneWay}" />
             </TextBlock>

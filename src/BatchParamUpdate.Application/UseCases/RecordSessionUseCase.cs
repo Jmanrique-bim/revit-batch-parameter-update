@@ -24,7 +24,6 @@ public sealed class RecordSessionUseCase
     public void Start()
     {
         SafeRecord(new SessionStart(_identity.SessionId, DateTimeOffset.UtcNow));
-        _logger.Info($"Session started {SessionId}");
     }
 
     public void RecordSearch(
@@ -47,6 +46,8 @@ public sealed class RecordSessionUseCase
 
     public void RecordPhaseTiming(string phase, long elapsedMs)
         => SafeRecord(new PhaseTiming(_identity.SessionId, DateTimeOffset.UtcNow, phase, elapsedMs));
+
+    public void Trace(string message) => _logger.Info(message);
 
     public void RecordBatch(BatchExecutionResult result, SelectionContext scope)
     {
@@ -135,7 +136,22 @@ public sealed class RecordSessionUseCase
                 ErrorWarningCatalog.Message(WarningCode.SessionRecordFailed),
                 WarningCode.SessionRecordFailed);
         }
+
+        _logger.Info(Describe(record));
     }
+
+    private static string Describe(MetricsRecord record) => record switch
+    {
+        SessionStart r => $"Session started {r.SessionId}",
+        SearchPerformed r =>
+            $"Search query='{r.QueryText}' instance={r.MatchedInInstanceSet.Count} [{string.Join(", ", r.MatchedInInstanceSet)}] type={r.MatchedInTypeSet.Count} [{string.Join(", ", r.MatchedInTypeSet)}]",
+        ParameterSelected r => $"Parameter selected {r.Name} ({r.Binding})",
+        PhaseTiming r => $"Phase {r.Phase} {r.ElapsedMs}ms",
+        BatchResult r =>
+            $"Batch result path={r.Path} updated={r.UpdatedCount} skipped={r.SkippedCounts.Values.Sum()} byCategory=[{string.Join("; ", r.CountsByCategory.Select(kv => $"{kv.Key} ok={kv.Value.Success} warn={kv.Value.Warning}"))}]",
+        SessionEnd r => $"Session ended {r.FinalState}",
+        _ => record.GetType().Name
+    };
 
     private static void Add(Dictionary<string, OutcomeCounts> map, string category, int success = 0, int warning = 0, int error = 0)
     {

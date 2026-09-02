@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using BatchParamUpdate.Domain.ErrorCatalog;
 using BatchParamUpdate.Domain.Ports;
 
@@ -6,47 +5,35 @@ namespace BatchParamUpdate.Core;
 
 public sealed class SessionFileLogger : ILoggerPort, IDisposable
 {
-    private readonly BlockingCollection<string> _queue = new();
-    private readonly Thread _writer;
-    private readonly string _path;
-
     public SessionFileLogger(string runId, string documentName)
     {
         var dir = Path.Combine(Path.GetTempPath(), "juanManriqueHexagon", "LOGS");
         Directory.CreateDirectory(dir);
-        var fileName = $"revit-{runId}-{DocumentNameSanitizer.Sanitize(documentName)}.txt";
-        _path = Path.Combine(dir, fileName);
-        _writer = new Thread(Drain) { IsBackground = true, Name = "SessionFileLogger" };
-        _writer.Start();
+        FilePath = Path.Combine(dir, $"revit-{runId}-{DocumentNameSanitizer.Sanitize(documentName)}_full.log");
+        Info($"Creating log at: {FilePath}");
     }
 
-    public void Info(string message) => Enqueue("INFO", message);
+    public string FilePath { get; }
+
+    public void Info(string message) => Write("Info", message);
 
     public void Warn(string message, WarningCode code)
-        => Enqueue("WARN", $"{ErrorWarningCatalog.Code(code)} {message}");
+        => Write("Warn", $"{ErrorWarningCatalog.Code(code)} {message}");
 
     public void Error(string message, ErrorCode code)
-        => Enqueue("ERROR", $"{ErrorWarningCatalog.Code(code)} {message}");
+        => Write("Error", $"{ErrorWarningCatalog.Code(code)} {message}");
 
     public void CloseSession()
     {
-        _queue.CompleteAdding();
-        _writer.Join();
     }
 
     public void Dispose()
     {
-        if (!_queue.IsAddingCompleted)
-            CloseSession();
-        _queue.Dispose();
     }
 
-    private void Enqueue(string level, string message)
-        => _queue.Add($"{DateTimeOffset.UtcNow:O} {level} {message}");
-
-    private void Drain()
-    {
-        foreach (var line in _queue.GetConsumingEnumerable())
-            File.AppendAllText(_path, line + Environment.NewLine);
-    }
+    // ponytail: IPX _full.log layout (${longdate}\t${level}\t${message}); no NLog.
+    private void Write(string level, string message)
+        => File.AppendAllText(
+            FilePath,
+            $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.ffff}\t{level}\t{message}{Environment.NewLine}");
 }
