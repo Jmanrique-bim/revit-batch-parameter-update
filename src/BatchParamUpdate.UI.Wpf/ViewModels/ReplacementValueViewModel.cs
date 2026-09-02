@@ -12,15 +12,20 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
     private readonly BatchUpdateCoordinator _coordinator;
     private readonly BatchExecutionViewModel _execution;
     private readonly BatchSummaryViewModel _summary;
+    private readonly Func<Action, Task> _runOnRevit;
 
     public ReplacementValueViewModel(
         BatchUpdateCoordinator coordinator,
         BatchExecutionViewModel execution,
-        BatchSummaryViewModel summary)
+        BatchSummaryViewModel summary,
+        Func<Action, Task>? runOnRevit = null)
     {
         _coordinator = coordinator;
         _execution = execution;
         _summary = summary;
+        // The Revit host swaps in an ExternalEvent bridge (modeless window can't open a
+        // Transaction directly). Default runs inline for non-Revit hosts and tests.
+        _runOnRevit = runOnRevit ?? (work => { work(); return Task.CompletedTask; });
         RunCommand = new RelayCommand(Run, () => CanRun);
     }
 
@@ -45,7 +50,8 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
     public bool CanRun =>
         _coordinator.State.Target is not null
         && !string.IsNullOrWhiteSpace(NewValue)
-        && _coordinator.Step == SessionState.AwaitingReplacementValue;
+        && _coordinator.Step == SessionState.AwaitingReplacementValue
+        && !_execution.IsExecuting;
 
     public ICommand RunCommand { get; }
 
@@ -57,14 +63,37 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         (RunCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
-    private void Run()
+    private async void Run()
     {
+        if (_execution.IsExecuting)
+            return;
+
+        // Snapshot scope / target / value now, on the UI thread, before the write is deferred to
+        // the ExternalEvent — the inputs stay live until the callback runs, so State could change.
+        var operation = _coordinator.PrepareRun();
+        if (operation is null)
+        {
+            _summary.Show(null, _coordinator.LastError);
+            return;
+        }
+
         _execution.IsExecuting = true;
+        NotifyCanRun();
         try
         {
-            var progress = new DispatcherPumpProgress(_execution.Report);
-            var result = _coordinator.Run(progress);
+            // The write loop runs on the Revit API thread (== this UI thread) inside the bridge,
+            // so Report is a direct call; RenderPumpProgress forces a repaint per element without
+            // draining input.
+            var progress = new RenderPumpProgress(_execution.Report);
+            BatchExecutionResult? result = null;
+            await _runOnRevit(() => result = _coordinator.Run(operation, progress));
             _summary.Show(result, _coordinator.LastError);
+        }
+        catch (Exception)
+        {
+            // The write threw inside the Revit API context (e.g. the target document was closed
+            // or is no longer active). Never let it escape async void and crash the host.
+            _summary.Show(null, ErrorCode.DocumentNotModifiable);
         }
         finally
         {

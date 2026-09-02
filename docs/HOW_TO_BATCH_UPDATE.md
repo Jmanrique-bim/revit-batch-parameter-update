@@ -15,9 +15,11 @@ Purpose: write one replacement string onto the chosen writable text **instance**
 
 ## Gate before write
 
-**Run update** is enabled only when `ReplacementValueViewModel.CanRun` is true: a chosen `WorkflowState.Target`, a non-whitespace value, and `SessionState.AwaitingReplacementValue`.
+**Run update** is enabled only when `ReplacementValueViewModel.CanRun` is true: a chosen `WorkflowState.Target`, a non-whitespace value, `SessionState.AwaitingReplacementValue`, and no batch already executing.
 
 `RunBatchUpdateUseCase.Execute` re-checks `operation.HasReplacementValue` (else `ErrorCode.EmptyValue`, no write). Session then `Executing`.
+
+The VM snapshots scope/target/value via `coordinator.PrepareRun()` at click time and passes that `ReplacementOperation` to `coordinator.Run(operation, progress)`; the modeless window defers the write to an ExternalEvent, so the snapshot — not later `State` edits — is what runs.
 
 ## The write
 
@@ -39,12 +41,12 @@ The target parameter is resolved by `ParameterCandidate.ResolvedKey` — built-i
 ## Commit outcome
 
 - `tx.Commit()` == `Committed` → `BatchExecutionResult.Committed(updated, skips)`; session back to `AwaitingReplacementValue` (another Run allowed).
-- `tx.Commit()` != `Committed` → `BatchExecutionResult.Reverted(skips)` → `ErrorCode.BatchRolledBack`; session `Blocked`. The summary reads *"Revit rejected the changes. No elements were modified."* — never a success count.
+- `tx.Commit()` != `Committed` → `BatchExecutionResult.Reverted(skips)` → `ErrorCode.BatchRolledBack`; session `Blocked`. The summary reads *"Revit rejected the changes. No elements were modified."* — never a success count — but the per-element skips the run collected are still shown and exportable, and `SessionTraceListener.Aggregate` records no `ok` counts for the run.
 - `tx.Start()` fails → port returns `null` → `ErrorCode.DocumentNotModifiable`, session `Blocked`.
 
 ## Progress
 
-`Execute` takes `IProgress<BatchProgress>` and reports `(done, total)` per element. `DispatcherPumpProgress` (UI) updates `BatchExecutionViewModel.Done/Total` and drains the WPF queue so the bar moves during the synchronous write. See `HOW_TO_MVVM.md`.
+`Execute` takes `IProgress<BatchProgress>` and reports `(done, total)` per element. The write runs on the Revit API thread (== the UI thread) via `RevitApiEventBridge`; the UI passes `RenderPumpProgress`, which updates `BatchExecutionViewModel.Done/Total` inline and pumps at `Render` priority to repaint without draining input. See `HOW_TO_MVVM.md`.
 
 ## Dialog suppression
 

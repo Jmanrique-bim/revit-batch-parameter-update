@@ -60,6 +60,56 @@ public sealed class BatchUpdateCoordinatorTests
     }
 
     [Fact]
+    public void PreparedRun_IsImmuneToStateMutationBeforeTheWrite()
+    {
+        var h = new CoordinatorHarness();
+        h.WithDiscovered("Comments");
+        h.WithPreExisting(new ElementRef("1", "Walls"));
+        h.Coordinator.EstablishSelection();
+        h.Coordinator.ChooseParameter(h.Coordinator.Candidates.Candidates[0]);
+        h.Coordinator.SetValue("confirmed");
+
+        var operation = h.Coordinator.PrepareRun();
+        Assert.NotNull(operation);
+
+        // The modeless window keeps the inputs live until the deferred write runs.
+        h.Coordinator.SetValue("changed-after-click");
+        h.Coordinator.AdoptManualSelection(
+            new SelectionContext([new ElementRef("99", "Doors")], SelectionOrigin.ManualPick));
+
+        h.Coordinator.Run(operation!, new Progress<BatchProgress>());
+
+        Assert.Equal("confirmed", h.Write.LastNewValue);
+        Assert.Equal(["1"], h.Write.LastScope!.ElementRefs.Select(e => e.Id));
+    }
+
+    [Fact]
+    public void Run_WhenWriteThrows_CopiesErrorRaisesBlockAndChanged()
+    {
+        var h = new CoordinatorHarness();
+        h.WithDiscovered("Comments");
+        h.WithPreExisting(new ElementRef("1", "Walls"));
+        h.Write.ThrowOnExecute = new InvalidOperationException("Revit said no");
+        h.Coordinator.EstablishSelection();
+        h.Coordinator.ChooseParameter(h.Coordinator.Candidates.Candidates[0]);
+        h.Coordinator.SetValue("v");
+
+        var changed = 0;
+        h.Coordinator.Changed += () => changed++;
+
+        var thrown = Record.Exception(() => h.Coordinator.Run());
+
+        Assert.Null(thrown);
+        Assert.Null(h.Coordinator.LastResult);
+        Assert.Equal(ErrorCode.DocumentNotModifiable, h.Coordinator.LastError);
+        Assert.Equal(SessionState.Blocked, h.Coordinator.Step);
+        Assert.True(changed > 0);
+        Assert.Contains(h.Logger.Lines, l => l.Contains("run\tstart", StringComparison.Ordinal));
+        Assert.Contains(h.Logger.Lines, l => l.Contains("to=Blocked", StringComparison.Ordinal));
+        Assert.Contains(h.Logger.Lines, l => l.StartsWith("ERROR DocumentNotModifiable", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Run_WhenTransactionReverts_SurfacesRolledBackResult()
     {
         var h = new CoordinatorHarness();

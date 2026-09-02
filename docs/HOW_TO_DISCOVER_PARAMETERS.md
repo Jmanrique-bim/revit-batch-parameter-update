@@ -7,13 +7,13 @@ Purpose: from a valid `SelectionContext`, build one deduplicated candidate set o
 - Port: `src/BatchParamUpdate.Domain/Ports/IParameterDiscoveryPort.cs` (`Discover`)
 - Adapter: `src/BatchParamUpdate.Adapters.Revit/Discovery/RevitParameterDiscoveryPort.cs`
 - Use case: `src/BatchParamUpdate.Application/UseCases/DiscoverParametersUseCase.cs`
-- Set: `ParameterCandidateSet` (calls `ParameterCandidate.Deduplicate` by name, case-insensitive)
+- Set: `ParameterCandidateSet` (calls `ParameterCandidate.Deduplicate`, keyed on `(name, built-in id, shared GUID)` — case-insensitive name — so a namesake with a different Revit identity stays a separate entry)
 - Search: `ParameterSearch` + `SharedSearchViewModel`
 - UI: `ParameterDiscoveryViewModel`, `InstanceParameterDialog.xaml` (the single parameter panel in `MainWindow.xaml`)
 
 ## Filter the adapter applies
 
-For each in-scope element, walk `element.Parameters`. Keep a parameter only if `StorageType.String`, `!IsReadOnly`, and `Definition.Name` is non-empty. Emit `ParameterCandidate(name, [source ElementRef], [AsString])`. Domain then unions by name and distinct observed values.
+For each in-scope element, walk `element.Parameters`. Keep a parameter only if `StorageType.String`, `!IsReadOnly`, and `Definition.Name` is non-empty. Emit `ParameterCandidate(name, [source ElementRef], [AsString], key)` where `key` carries the built-in id / shared GUID. Domain then merges candidates that share `(name, key)`, unioning source refs and distinct observed values.
 
 Discovery does not write the model.
 

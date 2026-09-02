@@ -58,7 +58,7 @@ Prerequisites: Velopack CLI (`vpk`) on PATH. `Installer.exe` must call `Velopack
 .\pack.ps1 -Version 1.0.0
 ```
 
-That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. The installer UI lists detected 2025/2026 installs and copies the matching assembly plus `.addin` (`Application` class = `App`) into the **per-user** add-ins folder `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights required.
+That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. The installer UI lists detected 2025/2026 installs and copies the matching assembly plus `.addin` (`Application` class = `App`) into the **per-user** add-ins folder `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights required. Install and uninstall also best-effort remove any manifest an older version left under `%ProgramData%\Autodesk\Revit\Addins\{year}`.
 
 Session artifacts:
 

@@ -31,7 +31,17 @@ public sealed class RunBatchUpdateUseCase
 
         session.TransitionTo(SessionState.Executing);
 
-        var result = _write.Execute(scope, operation.TargetParameter, operation.NewValue, progress);
+        BatchExecutionResult? result;
+        try
+        {
+            result = _write.Execute(scope, operation.TargetParameter, operation.NewValue, progress);
+        }
+        catch
+        {
+            // Same terminal as a null write result so the coordinator can copy Error, emit
+            // FlowBlocked / StateChanged, and raise Changed. Rethrowing skipped that bookkeeping.
+            result = null;
+        }
 
         if (result is null)
         {

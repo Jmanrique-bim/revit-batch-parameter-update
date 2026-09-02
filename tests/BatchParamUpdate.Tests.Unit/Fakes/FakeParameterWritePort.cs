@@ -9,11 +9,19 @@ public sealed class FakeParameterWritePort : IParameterWritePort
 
     public bool Revert { get; set; }
 
+    public Exception? ThrowOnExecute { get; set; }
+
     public Dictionary<string, SkipReason> SkipsByElementId { get; } = new();
 
     public int ExecuteCalls { get; private set; }
 
     public List<BatchProgress> ProgressReports { get; } = [];
+
+    public SelectionContext? LastScope { get; private set; }
+
+    public ParameterCandidate? LastTargetParameter { get; private set; }
+
+    public string? LastNewValue { get; private set; }
 
     public BatchExecutionResult? Execute(
         SelectionContext scope,
@@ -22,6 +30,11 @@ public sealed class FakeParameterWritePort : IParameterWritePort
         IProgress<BatchProgress> progress)
     {
         ExecuteCalls++;
+        LastScope = scope;
+        LastTargetParameter = targetParameter;
+        LastNewValue = newValue;
+        if (ThrowOnExecute is { } ex)
+            throw ex;
         if (BlockGlobally)
             return null;
 

@@ -33,17 +33,19 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 1. `SelectElementsCommand` → hide window → `PromptManualSelection` → show window → `coordinator.AdoptManualSelection`.
 2. Search `Text` → `TextChanged` → `ParameterDiscoveryViewModel.RefreshFilters`; `MainViewModel` records the search via `coordinator.RecordSearch`.
 3. Selecting a parameter → `coordinator.ChooseParameter` → `DiscoverParametersUseCase.Choose`. Blocked with `ErrorCode.EmptySelection` if the scope is empty.
-4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue`). `RelayCommand.RaiseCanExecuteChanged` covers the Revit host: `CommandManager` does not requery after `Hide` + `PickObjects` + `Show`.
-5. `Run()` sets `IsExecuting`, calls `coordinator.Run(new DispatcherPumpProgress(...))`, then `BatchSummaryViewModel.Show`.
+4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue` + not already executing). `RelayCommand.RaiseCanExecuteChanged` covers the Revit host: `CommandManager` does not requery after `Hide` + `PickObjects` + `Show`.
+5. `Run()` is `async void`: it first calls `coordinator.PrepareRun()` **synchronously** to snapshot scope/target/value into a `ReplacementOperation` (the inputs stay live during the deferred write, so State could otherwise change between click and callback), then sets `IsExecuting` and `await`s `_runOnRevit(() => coordinator.Run(operation, new RenderPumpProgress(...)))`, then `BatchSummaryViewModel.Show`. A `catch` maps any write exception (e.g. the document was closed) to a `DocumentNotModifiable` summary so it never escapes `async void`. `_runOnRevit` is the `RevitApiEventBridge` in the Revit host (inline default elsewhere).
 
 ## Progress bar
 
-`ProgressBar` binds `Value`/`Maximum` to `BatchExecutionViewModel.Done`/`Total`. The write runs synchronously on the modal thread, so `DispatcherPumpProgress.Report` drains the WPF queue between elements to keep the bar moving. (Upgrade path in `DispatcherPumpProgress`: modeless window + `IExternalEventHandler`.)
+`ProgressBar` binds `Value`/`Maximum` (both `OneWay`) to `BatchExecutionViewModel.Done`/`Total`. The write loop runs on the Revit API thread (== the UI thread) inside `RevitApiEventBridge`, which blocks the message pump. `RenderPumpProgress.Report` updates `Done`/`Total` inline and then pumps at `DispatcherPriority.Render` (throttled ~30fps) to force a repaint — `Render` does not drain `Input`, so a queued click can't re-enter mid-`Transaction`. (The removed `DispatcherPumpProgress` pumped at `Background`, which is below `Input` and dispatched it — the reentrancy bug.)
 
 ## Summary report at scale
 
-`Show(...)` updates the in-window summary only. `_allSkips` holds the full list; the view binds to derived properties: `SearchText` filter, `PagedSkips` (20 rows/page), `PageNumber`/`TotalPages`, `ExportCommand` (writes the full unfiltered list to `%USERPROFILE%\Downloads` via `IReportExportPort`). On a rollback the grid stays hidden and the headline is the `BatchRolledBack` message.
+`Show(...)` updates the in-window summary only. `_allSkips` holds the full list; the view binds to derived properties: `SearchText` filter, `PagedSkips` (20 rows/page), `PageNumber`/`TotalPages`, `ExportCommand` (writes the full unfiltered list to `%USERPROFILE%\Downloads` via `IReportExportPort`). On a rollback the headline is the `BatchRolledBack` message; the grid still shows the per-element skips the result carries and CSV export still works.
 
 ## Constraint
 
-The window is modal (`ShowDialog` on the Revit command). Keep pick/write on that thread; hide the window only for `PickObjects`.
+The window is modeless (`Show` on the Revit command; a static `_open` guard refocuses it on a second ribbon click). The batch write must go through `RevitApiEventBridge` (a modeless add-in can only open a `Transaction` from an ExternalEvent callback). `PickObjects` and read-only re-discovery still run as direct calls on the UI/Revit main thread; the window is hidden only for `PickObjects`. `BatchParameterUpdateCommand.Closed` calls `coordinator.Complete()` and disposes the bridge + logger.
+
+Because the window outlives `Execute`, `CompositionRoot` wraps `RunAsync` so the write refuses — throws, caught by the VM, shows `DocumentNotModifiable` — when `doc.IsValidObject` is false (the launch document was closed). The window is not auto-closed on document close: `window.Closed` runs outside a Revit API context, so it can't unsubscribe an `Application.DocumentClosing` handler, and leaking that handler would pin the document. The write it runs is the `PrepareRun()` snapshot, not whatever `State` holds at callback time.
