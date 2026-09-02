@@ -34,11 +34,11 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 2. Search `Text` → `TextChanged` → `ParameterDiscoveryViewModel.RefreshFilters`; `MainViewModel` records the search via `coordinator.RecordSearch`.
 3. Selecting a parameter → `coordinator.ChooseParameter` → `DiscoverParametersUseCase.Choose`. Blocked with `ErrorCode.EmptySelection` if the scope is empty.
 4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue` + not already executing). `RelayCommand.RaiseCanExecuteChanged` covers the Revit host: `CommandManager` does not requery after `Hide` + `PickObjects` + `Show`.
-5. `Run()` is `async void`: sets `IsExecuting`, `await`s `_runOnRevit(() => coordinator.Run(new Progress<BatchProgress>(...)))`, then `BatchSummaryViewModel.Show`. `_runOnRevit` is the `RevitApiEventBridge` in the Revit host (inline default elsewhere).
+5. `Run()` is `async void`: sets `IsExecuting`, `await`s `_runOnRevit(() => coordinator.Run(new RenderPumpProgress(...)))`, then `BatchSummaryViewModel.Show`. `_runOnRevit` is the `RevitApiEventBridge` in the Revit host (inline default elsewhere).
 
 ## Progress bar
 
-`ProgressBar` binds `Value`/`Maximum` (both `OneWay`) to `BatchExecutionViewModel.Done`/`Total`. The window is modeless and the write runs on the Revit API thread via `RevitApiEventBridge`, so the UI thread is free to repaint; `System.Progress<BatchProgress>` marshals `Report` back to it. No dispatcher pump.
+`ProgressBar` binds `Value`/`Maximum` (both `OneWay`) to `BatchExecutionViewModel.Done`/`Total`. The write loop runs on the Revit API thread (== the UI thread) inside `RevitApiEventBridge`, which blocks the message pump. `RenderPumpProgress.Report` updates `Done`/`Total` inline and then pumps at `DispatcherPriority.Render` (throttled ~30fps) to force a repaint — `Render` does not drain `Input`, so a queued click can't re-enter mid-`Transaction`. (The removed `DispatcherPumpProgress` pumped at `Background`, which is below `Input` and dispatched it — the reentrancy bug.)
 
 ## Summary report at scale
 

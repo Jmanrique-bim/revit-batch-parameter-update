@@ -44,7 +44,7 @@ The target parameter is resolved by `ParameterCandidate.ResolvedKey` — built-i
 
 ## Progress
 
-`Execute` takes `IProgress<BatchProgress>` and reports `(done, total)` per element. The UI passes `System.Progress<BatchProgress>`; the write runs on the Revit API thread via `RevitApiEventBridge` and `Progress<T>` marshals each report back to the UI thread to update `BatchExecutionViewModel.Done/Total`. See `HOW_TO_MVVM.md`.
+`Execute` takes `IProgress<BatchProgress>` and reports `(done, total)` per element. The write runs on the Revit API thread (== the UI thread) via `RevitApiEventBridge`; the UI passes `RenderPumpProgress`, which updates `BatchExecutionViewModel.Done/Total` inline and pumps at `Render` priority to repaint without draining input. See `HOW_TO_MVVM.md`.
 
 ## Dialog suppression
 

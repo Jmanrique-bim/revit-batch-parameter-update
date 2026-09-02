@@ -72,9 +72,10 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         NotifyCanRun();
         try
         {
-            // Progress<T> marshals Report back to this (UI) thread; the write loop calls it
-            // from the Revit API thread inside the bridge.
-            var progress = new Progress<BatchProgress>(_execution.Report);
+            // The write loop runs on the Revit API thread (== this UI thread) inside the bridge,
+            // so Report is a direct call; RenderPumpProgress forces a repaint per element without
+            // draining input.
+            var progress = new RenderPumpProgress(_execution.Report);
             BatchExecutionResult? result = null;
             await _runOnRevit(() => result = _coordinator.Run(progress));
             _summary.Show(result, _coordinator.LastError);
