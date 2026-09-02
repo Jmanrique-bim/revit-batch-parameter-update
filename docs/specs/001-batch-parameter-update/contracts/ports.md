@@ -168,8 +168,9 @@ public interface ILoggerPort
 ```
 
 - **Production adapter**: `Core.SessionFileLogger` (single canonical
-  implementation, research.md §e), consumed by `Adapters.Persistence`
-  and exposed to `Domain`/`Application` through this port.
+  implementation), consumed by `Adapters.Persistence`
+  and exposed to `Domain`/`Application` through this port. Writes to
+  `%LOCALAPPDATA%\juanManriqueHexagon\LOGS\{runId}-{documentName}.txt`.
 - **Test adapter**: in-memory fake (`List<string>`) for content
   assertions without touching the filesystem.
 
@@ -191,8 +192,8 @@ public interface ISessionRecorderPort
 - **Production adapter**: `Adapters.Persistence.NdjsonSessionRecorder`
   — serializes `MetricsRecord` (via `System.Text.Json`) and
   `File.AppendAllText`s to
-  `%TEMP%\juanManriqueHexagon\TRACKER\revit-{runId}-{documentName}.ndjson`
-  (research.md §f). If the write fails (permissions), it catches the
+  `%LOCALAPPDATA%\juanManriqueHexagon\TRACKER\{runId}-{documentName}.json`
+  (`SessionStoragePaths`; JSON Lines). If the write fails (permissions), it catches the
   exception, emits `WARN-400-SESSION-RECORD-FAILED` via `ILoggerPort`,
   and **does not** propagate the failure to the in-flight batch
   (matching spec.md edge case: "does not block the batch operation
@@ -242,8 +243,51 @@ public interface IInstallerPort
 | `ILoggerPort` | `Core.SessionFileLogger` (via `Adapters.Persistence`) | In-memory fake (`List<string>`) |
 | `ISessionRecorderPort` | `Adapters.Persistence.NdjsonSessionRecorder` | In-memory fake |
 | `IInstallerPort` | `Installer.RevitInstallerAdapter` | In-memory fake |
+| `IReportExportPort` *(addendum, see below)* | `Adapters.Persistence.CsvSkipReportExporter` | — (wired into the ViewModel; no Application tests) |
 
 `Tests.Unit` (xUnit) references only `Domain`/`Application` and the
 right-hand-column fakes — never production adapters nor `RevitAPI.dll`
 (research.md §g). `App` / ribbon / icons are exercised only in the
 manual `quickstart.md` path (SC-014).
+
+---
+
+## Addendum: `IReportExportPort` (UI redesign follow-up)
+
+Added alongside the compact-ribbon UI redesign, not part of the original
+7-port contract above — the batch summary needed a way to hand a skip
+report to someone off the model once a run could skip more elements than
+comfortably fit on screen (Report Panel · Variant C: paginated grid +
+CSV export in `BatchSummaryViewModel`).
+
+**Responsibility**: Export the skips from a batch run as a CSV file the
+user can share outside Revit, without `Domain`/`Application` or the
+`UI.Wpf` ViewModel touching the filesystem directly.
+
+```csharp
+public interface IReportExportPort
+{
+    // Writes skips to CSV and returns the path written.
+    string ExportSkips(IReadOnlyList<ElementSkip> skips, string runId);
+}
+```
+
+- **Production adapter**: `Adapters.Persistence.CsvSkipReportExporter` —
+  writes `Element,Category,Reason,Message` rows to
+  `%USERPROFILE%\Downloads\skip-report-{runId}.csv`.
+- **UI seam**: `BatchSummaryViewModel` takes `IReportExportPort` the same
+  way `SelectElementsViewModel` takes `IElementSelectionPort`. There is
+  no Application use case: the port method is the whole operation, and
+  `ExportCommand` stays disabled when `HasSkips` is false so an empty
+  file is never written. `BatchParameterUpdateCommand` constructs
+  `CsvSkipReportExporter` and injects it.
+- **Test adapter**: none in `Tests.Unit`. This port is a filesystem write
+  with a single production adapter; `Tests.Unit` does not reference
+  Persistence adapters (research.md §g). Exercise it on the add-in path
+  (`quickstart.md`).
+
+The pagination and search that back `PagedSkips` are presentation-only
+and live entirely in `BatchSummaryViewModel` — no new port for those;
+only the filesystem write crosses a port boundary, consistent with the
+dependency rule above. `Show` updates the in-window panel only; it does
+not open a second summary window.

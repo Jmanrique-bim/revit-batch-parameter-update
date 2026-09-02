@@ -20,9 +20,8 @@ public sealed class NdjsonSessionRecorder : ISessionRecorderPort
     public NdjsonSessionRecorder(string runId, string documentName, ILoggerPort logger)
     {
         _logger = logger;
-        var dir = Path.Combine(Path.GetTempPath(), "juanManriqueHexagon", "TRACKER");
-        Directory.CreateDirectory(dir);
-        FilePath = Path.Combine(dir, $"revit-{runId}-{DocumentNameSanitizer.Sanitize(documentName)}.ndjson");
+        Directory.CreateDirectory(SessionStoragePaths.TrackerDir);
+        FilePath = SessionStoragePaths.TrackerFile(runId, documentName);
     }
 
     public string FilePath { get; }

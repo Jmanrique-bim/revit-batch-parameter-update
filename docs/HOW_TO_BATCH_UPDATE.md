@@ -20,7 +20,7 @@ Binding on `operation.TargetParameter` selects the port method:
 - `ExecuteInstanceUpdate`
 - `ExecuteTypeUpdate`
 
-If the port returns `null` (transaction did not start), session → `Blocked`, `ErrorCode.DocumentNotModifiable`.
+If the port returns `null` (transaction did not start), session → `Blocked`, `ErrorCode.DocumentNotModifiable`. On success the session returns to `AwaitingReplacementValue` so another Run is allowed without closing the window.
 
 ## Instance path
 
@@ -53,6 +53,17 @@ Wraps the transaction:
 `SuppressNativeDialogsDuringBatch()` unsubscribes on dispose. Some native dialogs reject `OverrideResult`; the failures preprocessor is the other layer.
 
 Writes stay on the Revit API thread. The UI shows an indeterminate progress bar while `Run()` is in the `try` (`IsExecuting`).
+
+## Summary report
+
+`BatchSummaryViewModel.Show(...)` updates the in-window headline and, for
+the Instance path, a searchable/paginated skip grid (20 rows at a time)
+plus an **Export CSV** action that calls `IReportExportPort` directly
+(file lands in `%USERPROFILE%\Downloads`) —
+see `docs/HOW_TO_MVVM.md` § "Summary report at scale" and
+`docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md` for the port. There is no second
+summary window. The Type path still has no per-element skip list, so the
+grid stays hidden for that outcome.
 
 ## Diagram
 

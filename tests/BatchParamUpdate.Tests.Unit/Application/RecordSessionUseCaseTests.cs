@@ -41,6 +41,8 @@ public sealed class RecordSessionUseCaseTests
 
         useCase.RecordBatch(result, scope);
 
+        Assert.True(useCase.HasBatch);
+
         var batch = Assert.IsType<BatchResult>(Assert.Single(recorder.Records));
         Assert.Equal(ParameterBinding.Instance, batch.Path);
         Assert.Equal(1, batch.UpdatedCount);

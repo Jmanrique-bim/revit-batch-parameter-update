@@ -105,7 +105,7 @@ A user, developer, or evaluator needs to confirm after the fact what a given add
 
 **Acceptance Scenarios**:
 
-1. **Given** an add-in session has started (dialogs opened, searches performed), **When** the session ends (successfully, partially, or via cancellation), **Then** a session-scoped log recording the session's activity and a session-scoped NDJSON metrics record of the parameters/values searched and the operation's summary (including which path was used and any classification codes) are both persisted to disk, each named with the same unique session identifier (`revit-{runId}-{documentName}`).
+1. **Given** an add-in session has started (dialogs opened, searches performed), **When** the session ends (successfully, partially, or via cancellation), **Then** a session-scoped log recording the session's activity and a session-scoped JSON Lines metrics record of the parameters/values searched and the operation's summary (including which path was used and any classification codes) are both persisted to disk, each named with the same unique identifier (`{runId}-{documentName}`).
 2. **Given** a completed session's persisted records, **When** they are inspected afterward, **Then** the timing of the search phase and the execution phase, whether the Instance or Type path was used, and the count of outcomes (updated/succeeded, warnings, errors) grouped by classification type and by element category can all be determined from the persisted data.
 
 ### Edge Cases
@@ -181,7 +181,7 @@ Each edge case below is classified as a **400 (warning)** — the batch can stil
 - **FR-035**: The system MUST persist a session-scoped, human-readable `.txt` log capturing the session's activity for later review.
 - **FR-036**: The system MUST make the persisted session log available on the machine where the session ran, independent of whether Revit or the add-in remains open.
 - **FR-037**: The system MUST NOT require any network connection or external service to persist or retrieve session logs.
-- **FR-038**: The system MUST name each session's log file and metrics file using a unique identifier composed of the Revit session/run identifier and the active document's name (in the form `revit-{runId}-{documentName}`), so that sessions remain separate and identifiable from one another and from other documents.
+- **FR-038**: The system MUST name each session's log file and metrics file using a unique identifier composed of the Revit session/run identifier and the active document's name (in the form `{runId}-{documentName}`), so that sessions remain separate and identifiable from one another and from other documents.
 
 **Session Metrics**
 
@@ -214,7 +214,7 @@ Each edge case below is classified as a **400 (warning)** — the batch can stil
 - **Replacement Operation**: The chosen target parameter (with its resolved binding — Instance or Type), the new text value, and either the element selection scope (Instance path) or the resolved type(s) (Type path) it will be applied against.
 - **Batch Execution Result**: The outcome of running a Replacement Operation — for the Instance path, counts of updated and skipped elements with per-element skip reasons (including workshared-ownership conflicts, Model Group membership, and other auto-suppressed Revit dialogs); for the Type path, the affected type(s) and the total element count updated across the model.
 - **Error/Warning Code Catalog**: The set of 400 (warning) and 500 (error) classification codes, each with a stable identifier and a non-technical end-user message.
-- **Session Record**: The unique identifier (`revit-{runId}-{documentName}`) tying together one add-in invocation's log, metrics, and batch execution result.
+- **Session Record**: The unique identifier (`{runId}-{documentName}` on disk; `SessionRecord.SessionId` = `revit-{runId}-{documentName}`) tying together one add-in invocation's log, metrics, and batch execution result.
 - **Session Log**: The persisted, human-readable `.txt` account of a session's activity.
 - **Session Metrics Record**: The persisted NDJSON record of a session's search terms (with the dialog/binding they matched), timings, applied parameter/value/path, and outcome codes aggregated by type and element category.
 - **Installer Package**: The distributable artifact that installs the add-in into a Revit environment, along with its stated supported Revit version(s), and that launches an interactive install/uninstall/update UI.
@@ -246,8 +246,8 @@ The following are treated as decisions already made by the stakeholder who commi
 - **Technology stack**: WPF for all user-facing dialogs; C#/.NET; Autodesk Revit API, targeting Revit **2025, 2026, and 2027**; built with Visual Studio.
 - **Architecture**: A Domain/Hexagonal-hybrid architecture using ports-and-adapters is mandated specifically to decouple business logic from the Revit API, so that the batch-update logic, error classification, and reporting can be exercised and tested without a running Revit host.
 - **Logging ownership**: Logging capability lives in the solution's "core" layer and is inherited/extended by the domain and application layers, rather than being implemented independently per layer.
-- **Session storage locations**: Per-session metrics are written under the system Temp folder at `juanManriqueHexagon\TRACKER`; per-session logs are written in a parallel folder at `juanManriqueHexagon\LOGS` (both under the OS Temp directory). These are fixed locations, not user-configurable in this submission.
-- **Session/metrics file naming**: Both the `.txt` session log and the NDJSON metrics file use the same unique name, `revit-{runId}-{documentName}`, so a session's two artifacts can always be paired and located by name alone.
+- **Session storage locations**: Per-session metrics are written under `%LOCALAPPDATA%\juanManriqueHexagon\TRACKER`; per-session logs are written in a parallel folder at `%LOCALAPPDATA%\juanManriqueHexagon\LOGS`. These are fixed locations that do not follow `TMP`/`TEMP` (which some hosts redirect to `C:\Temp\{guid}\`). Not user-configurable in this submission.
+- **Session/metrics file naming**: Both the `.txt` session log and the JSON Lines metrics file use the same unique name, `{runId}-{documentName}`, so a session's two artifacts can always be paired and located by name alone.
 - **Metrics format**: Session metrics are written as NDJSON (one JSON object per line) specifically so they can be queried with simple line-oriented tools without a bespoke parser, and are aggregated by outcome type (success/warning/error) and by Revit element category.
 - **Error/Warning taxonomy**: Every abnormal condition is classified as either 400 (warning — partial progress still possible) or 500 (error — operation blocked), each carrying a non-technical message for the end user; the code is persisted alongside the final summary in the session log.
 - **Four delivery pillars**: The submission is explicitly organized around Functionality, Traceability, Observability, and Testability as evaluation dimensions, which is why logging, metrics, and a decoupled architecture are in scope even though the base assessment brief did not require them.

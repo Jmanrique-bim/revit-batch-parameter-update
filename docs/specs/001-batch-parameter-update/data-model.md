@@ -196,7 +196,7 @@ Identifier that ties a log and metrics of the same invocation.
 |---|---|---|
 | `RunId` | `string` (8 hex chars) | research.md §f. |
 | `DocumentName` | `string` (sanitized) | research.md §f. |
-| `SessionId` | `string` (derived: `revit-{RunId}-{DocumentName}`) | FR-038. Shared base name for `.txt` and `.ndjson`. |
+| `SessionId` | `string` (derived: `revit-{RunId}-{DocumentName}`) | Logical session id in metrics records. On-disk pair is `{RunId}-{DocumentName}.txt` / `.json`. |
 | `StartedAtUtc` | `DateTimeOffset` | FR-039. |
 
 ### Session Log

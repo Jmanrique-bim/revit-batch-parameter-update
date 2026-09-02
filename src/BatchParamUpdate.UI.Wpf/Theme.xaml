@@ -1,0 +1,123 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!--
+    Shared visual language for the Batch Parameter Update window — the
+    "Under the moonlight" palette plus white as the dominant surface, so
+    color is reserved for primary actions and the selected/current state
+    rather than spread across the whole UI. Merged by MainWindow.xaml,
+    InstanceParameterDialog.xaml and TypeParameterDialog.xaml.
+  -->
+  <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+
+  <SolidColorBrush x:Key="LavenderLightBrush" Color="#CCCCFF" />
+  <SolidColorBrush x:Key="LavenderBrush" Color="#A3A3CC" />
+  <SolidColorBrush x:Key="IndigoBrush" Color="#5C5C99" />
+  <SolidColorBrush x:Key="IndigoDarkBrush" Color="#292966" />
+  <SolidColorBrush x:Key="RibbonDividerBrush" Color="#3D3D80" />
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#FAFAFD" />
+  <SolidColorBrush x:Key="BorderBrush" Color="#E1E1EF" />
+  <SolidColorBrush x:Key="TextBrush" Color="#1D1D33" />
+  <SolidColorBrush x:Key="MutedTextBrush" Color="#5B5B75" />
+  <SolidColorBrush x:Key="WarnTextBrush" Color="#B36B00" />
+  <SolidColorBrush x:Key="WarnBackgroundBrush" Color="#FFF4E3" />
+  <SolidColorBrush x:Key="WarnBorderBrush" Color="#F0DCB4" />
+  <SolidColorBrush x:Key="ErrorBrush" Color="#B00020" />
+
+  <Style x:Key="RibbonCaptionStyle" TargetType="TextBlock">
+    <Setter Property="Foreground" Value="#9C9CD1" />
+    <Setter Property="FontSize" Value="9.5" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Margin" Value="2,4,0,0" />
+  </Style>
+
+  <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="{StaticResource IndigoDarkBrush}" />
+  </Style>
+
+  <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+    <Setter Property="Background" Value="{StaticResource IndigoDarkBrush}" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="Padding" Value="14,7" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+    <Style.Triggers>
+      <Trigger Property="IsEnabled" Value="False">
+        <Setter Property="Opacity" Value="0.45" />
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource PrimaryButtonStyle}">
+    <Setter Property="Background" Value="White" />
+    <Setter Property="Foreground" Value="{StaticResource IndigoDarkBrush}" />
+    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border Background="{TemplateBinding Background}"
+                  BorderBrush="{StaticResource LavenderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="5"
+                  Padding="{TemplateBinding Padding}">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="PagerButtonStyle" TargetType="Button" BasedOn="{StaticResource SecondaryButtonStyle}">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Padding" Value="0,4" />
+  </Style>
+
+  <!-- Dense list rows for the instance/type parameter panels: selected row
+       gets the light lavender fill + indigo text used across the app for
+       "this is the current choice". -->
+  <Style x:Key="ParameterListBoxStyle" TargetType="ListBox">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+    <Setter Property="MaxHeight" Value="260" />
+  </Style>
+
+  <Style x:Key="ParameterListBoxItemStyle" TargetType="ListBoxItem">
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ListBoxItem">
+          <Border x:Name="RowBorder"
+                  Background="Transparent"
+                  BorderBrush="{StaticResource LavenderBrush}"
+                  BorderThickness="0,0,0,1"
+                  Padding="{TemplateBinding Padding}">
+            <ContentPresenter />
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+              <Setter TargetName="RowBorder" Property="Background" Value="{StaticResource LavenderLightBrush}" />
+              <Setter TargetName="RowBorder" Property="BorderBrush" Value="{StaticResource IndigoBrush}" />
+              <Setter TargetName="RowBorder" Property="BorderThickness" Value="3,0,0,1" />
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="RowBorder" Property="Background" Value="{StaticResource SurfaceBrush}" />
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+</ResourceDictionary>

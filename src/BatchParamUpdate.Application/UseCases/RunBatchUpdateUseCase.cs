@@ -64,8 +64,7 @@ public sealed class RunBatchUpdateUseCase
         LogOutcome(result, scope);
         _recorder?.RecordBatch(result, scope);
         Error = null;
-        session.TransitionTo(SessionState.Completed);
-        _recorder?.End(session);
+        session.TransitionTo(SessionState.AwaitingReplacementValue);
         return result;
     }
 

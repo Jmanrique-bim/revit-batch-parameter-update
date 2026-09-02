@@ -63,7 +63,23 @@ public sealed class RunBatchUpdateUseCaseTests
         Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.ParameterNotText);
         Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.WorksharingOwnedByOther);
         Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.ModelGroupMember);
-        Assert.Equal(SessionState.Completed, session.State);
+        Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
+    }
+
+    [Fact]
+    public void Execute_TwiceInSameSession_StaysAwaitingReplacementValue()
+    {
+        var write = new FakeParameterWritePort();
+        var useCase = new RunBatchUpdateUseCase(write);
+        var session = AwaitingSession();
+        var operation = new ReplacementOperation(InstanceParam, "new", new InstanceScope(Scope));
+
+        useCase.Execute(session, operation, Scope);
+        var second = useCase.Execute(session, operation, Scope);
+
+        Assert.NotNull(second);
+        Assert.Equal(2, write.InstanceUpdateCalls);
+        Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }
 
     [Fact]
