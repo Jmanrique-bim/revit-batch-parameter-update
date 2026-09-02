@@ -18,7 +18,7 @@ For each in-scope element:
 - **Instance:** walk `element.Parameters`
 - **Type:** resolve `element.GetTypeId()` and walk that `ElementType`'s parameters
 
-Keep a parameter only if `StorageType.String`, `!IsReadOnly`, and `Definition.Name` is non-empty. Emit `ParameterCandidate(name, binding, [source ElementRef])`. Domain then unions by name.
+Keep a parameter only if `StorageType.String`, `!IsReadOnly`, and `Definition.Name` is non-empty. Emit `ParameterCandidate(name, binding, [source ElementRef], [AsString])`. Domain then unions by name and distinct observed values.
 
 Discovery does not write the model.
 
@@ -27,9 +27,8 @@ Discovery does not write the model.
 1. Command (or a later pick) calls `DiscoverParametersUseCase.Discover(scope)` → both port methods; records phase timing `"Discovery"`.
 2. `SharedSearchViewModel.ReplaceSets` holds the full sets. Typing filters both lists with `Name.Contains(text, OrdinalIgnoreCase)`. Empty search text = unfiltered.
 3. Search matches are recorded via `RecordSessionUseCase.RecordSearch`.
-4. The user selects one list item. Selecting Instance clears Type and vice versa.
-5. **Continue** runs `DiscoverParametersUseCase.Choose`. Null candidate → `ErrorCode.NoParameterSelected`. Otherwise session → `AwaitingReplacementValue` and a `ReplacementOperation` with empty `NewValue`.
-6. Type selection also sets `ShowWideBlastWarning` (inline, non-modal). Instance does not.
+4. Selecting a list item is the choose step: Instance clears Type and vice versa, then `DiscoverParametersUseCase.Choose` runs immediately. Session → `AwaitingReplacementValue`. The UI shows distinct `ObservedValues` captured at discovery (union: more than one current value is expected).
+5. Type selection also sets `ShowWideBlastWarning` (inline, non-modal). Instance does not. There is no extra Continue confirmation.
 
 ## Constraints
 

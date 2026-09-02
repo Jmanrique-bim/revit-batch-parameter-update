@@ -31,7 +31,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
         }
 
         var doc = uidoc.Document;
-        if (!doc.IsModifiable)
+        if (doc.IsReadOnly)
         {
             message = ErrorWarningCatalog.Message(ErrorCode.DocumentNotModifiable);
             TaskDialog.Show("Batch Parameter Update", message);
@@ -47,6 +47,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             logger,
             new SessionRecord(runId, documentName, DateTimeOffset.UtcNow));
         record.Start();
+        record.Trace($"Command start document={doc.Title} runId={runId}");
 
         var session = new Session();
         try
@@ -57,6 +58,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             var scope = preExisting.IsValid
                 ? establish.Execute(session)
                 : new SelectionContext([], SelectionOrigin.ManualPick);
+            record.Trace($"Selection origin={scope.Origin} count={scope.ElementRefs.Count}");
 
             var discoveryPort = new RevitParameterDiscoveryPort(doc);
             var discover = new DiscoverParametersUseCase(discoveryPort, record);
@@ -72,7 +74,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             var dialogs = new RevitDialogSuppressionPort(uiapp, doc);
             var run = new RunBatchUpdateUseCase(new RevitParameterWritePort(doc, dialogs), logger, record);
             var executionVm = new BatchExecutionViewModel();
-            var summaryVm = new BatchSummaryViewModel();
+            var summaryVm = new BatchSummaryViewModel(logger.FilePath, metrics.FilePath);
 
             MainWindow? window = null;
             var selectVm = new SelectElementsViewModel(
@@ -100,6 +102,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
                 var (instance, type) = discover.Discover(next);
                 searchVm.ReplaceSets(instance, type);
                 discoveryVm.Retarget(next);
+                record.Trace($"Selection updated origin={next.Origin} count={next.ElementRefs.Count}");
             };
 
             searchVm.TextChanged += (_, _) =>

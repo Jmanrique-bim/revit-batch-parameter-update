@@ -28,7 +28,7 @@ The command fails immediately (no window) if there is no `ActiveUIDocument` (`Er
 | Open with empty selection | empty `SelectionContext` (`SelectionOrigin.ManualPick`) | **Select Elements** enabled |
 | Pick elements | `SelectElementsViewModel` → `IElementSelectionPort.PromptManualSelection` | rediscover candidates |
 | Type in search | `SharedSearchViewModel` | live filter of both lists |
-| Continue | `DiscoverParametersUseCase.Choose` | `SessionState.AwaitingReplacementValue` |
+| Select a parameter in either list | `DiscoverParametersUseCase.Choose` | `SessionState.AwaitingReplacementValue` + current-value line |
 | Run update | `ReplacementValueViewModel` → `RunBatchUpdateUseCase.Execute` | write + summary |
 
 Details: [HOW_TO_SELECTION.md](HOW_TO_SELECTION.md), [HOW_TO_DISCOVER_PARAMETERS.md](HOW_TO_DISCOVER_PARAMETERS.md), [HOW_TO_BATCH_UPDATE.md](HOW_TO_BATCH_UPDATE.md), [HOW_TO_SESSIONS.md](HOW_TO_SESSIONS.md), [HOW_TO_MVVM.md](HOW_TO_MVVM.md).

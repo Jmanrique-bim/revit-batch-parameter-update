@@ -16,22 +16,22 @@ public sealed class NdjsonSessionRecorder : ISessionRecorderPort
     };
 
     private readonly ILoggerPort _logger;
-    private readonly string _path;
 
     public NdjsonSessionRecorder(string runId, string documentName, ILoggerPort logger)
     {
         _logger = logger;
         var dir = Path.Combine(Path.GetTempPath(), "juanManriqueHexagon", "TRACKER");
         Directory.CreateDirectory(dir);
-        var fileName = $"revit-{runId}-{DocumentNameSanitizer.Sanitize(documentName)}.ndjson";
-        _path = Path.Combine(dir, fileName);
+        FilePath = Path.Combine(dir, $"revit-{runId}-{DocumentNameSanitizer.Sanitize(documentName)}.ndjson");
     }
+
+    public string FilePath { get; }
 
     public void Record(MetricsRecord record)
     {
         try
         {
-            File.AppendAllText(_path, JsonSerializer.Serialize(Shape(record), Json) + Environment.NewLine);
+            File.AppendAllText(FilePath, JsonSerializer.Serialize(Shape(record), Json) + Environment.NewLine);
         }
         catch
         {

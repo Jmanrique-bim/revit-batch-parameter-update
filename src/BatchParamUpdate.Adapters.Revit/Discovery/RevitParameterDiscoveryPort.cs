@@ -34,7 +34,11 @@ public sealed class RevitParameterDiscoveryPort : IParameterDiscoveryPort
                 if (string.IsNullOrEmpty(name))
                     continue;
 
-                yield return new ParameterCandidate(name, binding, [eref]);
+                yield return new ParameterCandidate(
+                    name,
+                    binding,
+                    [eref],
+                    [parameter.AsString() ?? ""]);
             }
         }
     }

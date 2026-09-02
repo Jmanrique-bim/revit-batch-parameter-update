@@ -16,10 +16,7 @@ public sealed class RevitElementSelectionPort : IElementSelectionPort
     {
         var refs = new List<ElementRef>();
         foreach (var id in _uidoc.Selection.GetElementIds())
-        {
-            var element = _uidoc.Document.GetElement(id);
-            refs.Add(new ElementRef(id.ToString(), element?.Category?.Name ?? string.Empty));
-        }
+            refs.Add(ToRef(_uidoc.Document.GetElement(id), id));
 
         return new SelectionContext(refs, SelectionOrigin.PreExisting);
     }
@@ -31,12 +28,7 @@ public sealed class RevitElementSelectionPort : IElementSelectionPort
             var picked = _uidoc.Selection.PickObjects(ObjectType.Element, "Select elements");
             var refs = new List<ElementRef>(picked.Count);
             foreach (var reference in picked)
-            {
-                var element = _uidoc.Document.GetElement(reference.ElementId);
-                refs.Add(new ElementRef(
-                    reference.ElementId.ToString(),
-                    element?.Category?.Name ?? string.Empty));
-            }
+                refs.Add(ToRef(_uidoc.Document.GetElement(reference.ElementId), reference.ElementId));
 
             return new SelectionContext(refs, SelectionOrigin.ManualPick);
         }
@@ -44,5 +36,20 @@ public sealed class RevitElementSelectionPort : IElementSelectionPort
         {
             return null;
         }
+    }
+
+    private static ElementRef ToRef(Element? element, ElementId id)
+    {
+        var category = element?.Category?.Name ?? "";
+        var typeName = "";
+        if (element is not null)
+        {
+            var typeId = element.GetTypeId();
+            typeName = typeId != ElementId.InvalidElementId
+                ? element.Document.GetElement(typeId)?.Name ?? ""
+                : element.Name ?? "";
+        }
+
+        return new ElementRef(id.ToString(), category, typeName);
     }
 }

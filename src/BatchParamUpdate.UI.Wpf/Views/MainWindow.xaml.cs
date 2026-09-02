@@ -22,9 +22,9 @@ public partial class MainWindow
         SharedSearchBox.DataContext = search;
         InstanceDialog.DataContext = discovery;
         TypeDialog.DataContext = discovery;
-        ChooseParameterButton.DataContext = discovery;
         AdvanceErrorBanner.DataContext = discovery;
         ReplacementPanel.DataContext = replacement;
+        CurrentValueBanner.DataContext = discovery;
         ExecutionProgress.DataContext = execution;
         SummaryPanel.DataContext = summary;
     }

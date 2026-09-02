@@ -21,9 +21,12 @@ public sealed class DiscoverParametersUseCase
     public (InstanceParameterCandidateSet Instance, TypeParameterCandidateSet Type) Discover(SelectionContext scope)
     {
         using var timer = PhaseTimer.Start();
-        var sets = (_discovery.DiscoverInstanceCandidates(scope), _discovery.DiscoverTypeCandidates(scope));
+        var instance = _discovery.DiscoverInstanceCandidates(scope);
+        var type = _discovery.DiscoverTypeCandidates(scope);
         _recorder?.RecordPhaseTiming("Discovery", timer.ElapsedMs);
-        return sets;
+        _recorder?.Trace(
+            $"Discovery scope={scope.ElementRefs.Count} origin={scope.Origin} instance={instance.Candidates.Count} type={type.Candidates.Count}");
+        return (instance, type);
     }
 
     public ReplacementOperation? Choose(
@@ -34,6 +37,7 @@ public sealed class DiscoverParametersUseCase
         if (candidate is null)
         {
             Error = ErrorCode.NoParameterSelected;
+            _recorder?.Trace("Choose blocked: no parameter selected");
             return null;
         }
 

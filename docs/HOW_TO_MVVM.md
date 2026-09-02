@@ -17,7 +17,7 @@ One WPF window. Six ViewModels, bound piecewise — not a single root DataContex
 |---|---|
 | Select Elements + empty banner | `SelectElementsViewModel` |
 | Search box | `SharedSearchViewModel` |
-| Instance/Type lists, Continue, advance error | `ParameterDiscoveryViewModel` |
+| Instance/Type lists, current-value line, advance error | `ParameterDiscoveryViewModel` |
 | Replacement value + Run update | `ReplacementValueViewModel` |
 | Progress bar | `BatchExecutionViewModel` |
 | Summary | `BatchSummaryViewModel` |
@@ -28,7 +28,7 @@ ViewModels implement `INotifyPropertyChanged`. They call Application use cases a
 
 1. `SelectElementsCommand` → hide window → `PromptManualSelection` → show window → raise `Selection`.
 2. Search `Text` → `TextChanged` → discovery VM refreshes filtered lists; command records search metrics.
-3. `ChooseParameterCommand` → `DiscoverParametersUseCase.Choose` → `Operation` / `AdvanceErrorMessage`. `CommandManager.InvalidateRequerySuggested` when `Operation` changes so **Run update** can enable.
+3. Selecting a parameter in either list → `DiscoverParametersUseCase.Choose` → `Operation` / `CurrentValueSummary`. `CommandManager.InvalidateRequerySuggested` so **Run update** can enable.
 4. `RunCommand` `CanExecute` requires non-whitespace value **and** `SessionState.AwaitingReplacementValue`.
 5. `Run()` sets `IsExecuting`, calls `RunBatchUpdateUseCase.Execute`, then `BatchSummaryViewModel.Show`.
 
