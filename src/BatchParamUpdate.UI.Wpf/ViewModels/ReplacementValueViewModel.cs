@@ -74,11 +74,12 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         try
         {
             var result = _run.Execute(_session, operation, _scope());
-            _summary.Show(result, _run.Error, operation);
+            _summary.Show(result, _run.Error);
         }
         finally
         {
             _execution.IsExecuting = false;
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 

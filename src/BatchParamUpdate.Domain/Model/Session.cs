@@ -20,9 +20,10 @@ public sealed class Session
         return to switch
         {
             SessionState.Discovering => from is SessionState.Started,
-            SessionState.AwaitingReplacementValue => from is SessionState.Discovering,
+            SessionState.AwaitingReplacementValue => from is SessionState.Discovering or SessionState.Executing,
             SessionState.Executing => from is SessionState.AwaitingReplacementValue,
-            SessionState.Completed or SessionState.Blocked => from is SessionState.Executing,
+            SessionState.Completed => from is SessionState.Executing or SessionState.AwaitingReplacementValue,
+            SessionState.Blocked => from is SessionState.Executing,
             SessionState.Cancelled => true,
             _ => false
         };

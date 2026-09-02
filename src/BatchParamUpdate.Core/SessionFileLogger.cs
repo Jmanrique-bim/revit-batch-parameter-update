@@ -7,9 +7,8 @@ public sealed class SessionFileLogger : ILoggerPort, IDisposable
 {
     public SessionFileLogger(string runId, string documentName)
     {
-        var dir = Path.Combine(Path.GetTempPath(), "juanManriqueHexagon", "LOGS");
-        Directory.CreateDirectory(dir);
-        FilePath = Path.Combine(dir, $"revit-{runId}-{DocumentNameSanitizer.Sanitize(documentName)}_full.log");
+        Directory.CreateDirectory(SessionStoragePaths.LogsDir);
+        FilePath = SessionStoragePaths.LogFile(runId, documentName);
         Info($"Creating log at: {FilePath}");
     }
 

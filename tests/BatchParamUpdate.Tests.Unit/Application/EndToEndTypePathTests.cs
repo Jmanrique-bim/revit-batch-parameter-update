@@ -38,6 +38,6 @@ public sealed class EndToEndTypePathTests
         Assert.Equal(ParameterBinding.Type, result.Path);
         Assert.Equal(8, result.TypeOutcome!.TotalElementsUpdated);
         Assert.Equal("Basic Wall", result.TypeOutcome.AffectedTypes[0].Name);
-        Assert.Equal(SessionState.Completed, session.State);
+        Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }
 }

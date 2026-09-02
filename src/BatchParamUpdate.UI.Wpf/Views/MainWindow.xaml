@@ -84,12 +84,15 @@
                 CornerRadius="6"
                 Padding="14">
           <StackPanel>
-            <TextBlock x:Name="CurrentValueBanner"
-                       Margin="0,0,0,8"
-                       TextWrapping="Wrap"
-                       Foreground="{StaticResource MutedTextBrush}"
-                       Text="{Binding CurrentValueSummary}"
-                       Visibility="{Binding HasCurrentValueSummary, Converter={StaticResource BooleanToVisibilityConverter}}" />
+            <Expander x:Name="CurrentValueBanner"
+                      Header="Current values"
+                      IsExpanded="False"
+                      Margin="0,0,0,8"
+                      Visibility="{Binding HasCurrentValueSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
+              <TextBlock TextWrapping="Wrap"
+                         Foreground="{StaticResource MutedTextBrush}"
+                         Text="{Binding CurrentValueSummary}" />
+            </Expander>
             <Grid>
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
@@ -145,8 +148,7 @@
                 <TextBox Grid.Column="0"
                          Padding="7,6"
                          Margin="0,0,10,0"
-                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                         Tag="Filter by element, category or reason…" />
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
                 <Button Grid.Column="1"
                         Content="Export CSV"
                         Command="{Binding ExportCommand}"

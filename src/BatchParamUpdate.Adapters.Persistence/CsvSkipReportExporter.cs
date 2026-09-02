@@ -6,9 +6,7 @@ using BatchParamUpdate.Domain.Ports;
 namespace BatchParamUpdate.Adapters.Persistence;
 
 /// <summary>
-/// Writes the skip list from a batch run to a CSV file under the same
-/// %TEMP%\juanManriqueHexagon root used by the logger and the session
-/// recorder, so all three artifacts of one run live side by side.
+/// Writes the skip list from a batch run to a CSV in the user's Downloads folder.
 /// </summary>
 public sealed class CsvSkipReportExporter : IReportExportPort
 {
@@ -16,7 +14,9 @@ public sealed class CsvSkipReportExporter : IReportExportPort
 
     public string ExportSkips(IReadOnlyList<ElementSkip> skips, string runId)
     {
-        var dir = Path.Combine(Path.GetTempPath(), "juanManriqueHexagon", "REPORTS");
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            "Downloads");
         Directory.CreateDirectory(dir);
         var path = Path.Combine(dir, $"skip-report-{DocumentNameSanitizer.Sanitize(runId)}.csv");
 
@@ -36,11 +36,8 @@ public sealed class CsvSkipReportExporter : IReportExportPort
         return path;
     }
 
-    private static string Csv(string value)
-    {
-        if (value.IndexOfAny([',', '"', '\n', '\r']) < 0)
-            return value;
-
-        return "\"" + value.Replace("\"", "\"\"") + "\"";
-    }
+    private static string Csv(string value) =>
+        value.IndexOfAny([',', '"', '\n', '\r']) < 0
+            ? value
+            : $"\"{value.Replace("\"", "\"\"")}\"";
 }

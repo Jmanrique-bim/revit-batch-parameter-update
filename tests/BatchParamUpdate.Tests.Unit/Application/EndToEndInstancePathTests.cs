@@ -43,6 +43,6 @@ public sealed class EndToEndInstancePathTests
         Assert.Equal(1, result.InstanceOutcome!.UpdatedCount);
         Assert.Single(result.InstanceOutcome.Skips);
         Assert.Equal(SkipReason.ParameterMissing, result.InstanceOutcome.Skips[0].Reason);
-        Assert.Equal(SessionState.Completed, session.State);
+        Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }
 }

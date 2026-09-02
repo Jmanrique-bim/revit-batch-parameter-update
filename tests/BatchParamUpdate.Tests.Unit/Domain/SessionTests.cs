@@ -12,8 +12,17 @@ public sealed class SessionTests
         session.TransitionTo(SessionState.Discovering);
         session.TransitionTo(SessionState.AwaitingReplacementValue);
         session.TransitionTo(SessionState.Executing);
+        session.TransitionTo(SessionState.AwaitingReplacementValue);
         session.TransitionTo(SessionState.Completed);
         Assert.Equal(SessionState.Completed, session.State);
+    }
+
+    [Fact]
+    public void Executing_CanReturnToAwaitingReplacementValue()
+    {
+        var session = AdvanceTo(SessionState.Executing);
+        session.TransitionTo(SessionState.AwaitingReplacementValue);
+        Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }
 
     [Fact]
@@ -78,7 +87,7 @@ public sealed class SessionTests
         SessionState.Executing =>
             [SessionState.Discovering, SessionState.AwaitingReplacementValue, SessionState.Executing],
         SessionState.Completed =>
-            [SessionState.Discovering, SessionState.AwaitingReplacementValue, SessionState.Executing, SessionState.Completed],
+            [SessionState.Discovering, SessionState.AwaitingReplacementValue, SessionState.Executing, SessionState.AwaitingReplacementValue, SessionState.Completed],
         SessionState.Blocked =>
             [SessionState.Discovering, SessionState.AwaitingReplacementValue, SessionState.Executing, SessionState.Blocked],
         SessionState.Cancelled => [SessionState.Cancelled],

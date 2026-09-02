@@ -15,5 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
     <ProjectReference Include="..\..\src\BatchParamUpdate.Application\BatchParamUpdate.Application.csproj" />
+    <ProjectReference Include="..\..\src\BatchParamUpdate.Core\BatchParamUpdate.Core.csproj" />
   </ItemGroup>
 </Project>

@@ -21,6 +21,8 @@ public sealed class RecordSessionUseCase
 
     public string SessionId => _identity.SessionId;
 
+    public bool HasBatch => _lastBatch is not null;
+
     public void Start()
     {
         SafeRecord(new SessionStart(_identity.SessionId, DateTimeOffset.UtcNow));

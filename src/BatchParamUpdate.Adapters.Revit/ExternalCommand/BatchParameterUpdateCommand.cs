@@ -74,9 +74,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             var dialogs = new RevitDialogSuppressionPort(uiapp, doc);
             var run = new RunBatchUpdateUseCase(new RevitParameterWritePort(doc, dialogs), logger, record);
             var executionVm = new BatchExecutionViewModel();
-            var exportPort = new CsvSkipReportExporter();
-            var exportReport = new ExportSkipReportUseCase(exportPort);
-            var summaryVm = new BatchSummaryViewModel(logger.FilePath, metrics.FilePath, runId, exportReport);
+            var summaryVm = new BatchSummaryViewModel(new CsvSkipReportExporter(), runId);
 
             MainWindow? window = null;
             var selectVm = new SelectElementsViewModel(
@@ -126,7 +124,9 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
         }
         finally
         {
-            if (session.State is not SessionState.Completed and not SessionState.Blocked and not SessionState.Cancelled)
+            if (session.State is SessionState.AwaitingReplacementValue && record.HasBatch)
+                session.TransitionTo(SessionState.Completed);
+            else if (session.State is not SessionState.Completed and not SessionState.Blocked and not SessionState.Cancelled)
                 session.TransitionTo(SessionState.Cancelled);
             record.End(session);
         }

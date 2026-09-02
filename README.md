@@ -59,8 +59,8 @@ That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u 
 
 Session artifacts:
 
-- Logs: `%TEMP%\juanManriqueHexagon\LOGS\revit-{runId}-{documentName}.txt`
-- Metrics: `%TEMP%\juanManriqueHexagon\TRACKER\revit-{runId}-{documentName}.ndjson`
+- Logs: `%LOCALAPPDATA%\juanManriqueHexagon\LOGS\{runId}-{documentName}.txt`
+- Metrics: `%LOCALAPPDATA%\juanManriqueHexagon\TRACKER\{runId}-{documentName}.json`
 
 ## Documentation
 

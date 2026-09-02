@@ -168,26 +168,26 @@ Success Criteria (SC) in `spec.md` that it validates.
 
 After running at least one of the previous scenarios:
 
-1. Locate, under `%TEMP%\juanManriqueHexagon\LOGS\`, the
-   `revit-{runId}-{documentName}.txt` file for the session just run (see
+1. Locate, under `%LOCALAPPDATA%\juanManriqueHexagon\LOGS\`, the
+   `{runId}-{documentName}.txt` file for the session just run (see
    `data-model.md` §8 for the name format).
    **Expected**: the file exists, is readable as plain text, and
    contains entries for scope establishment, searches performed,
    chosen parameter/value, each individual skip (with its code), and
    the final summary.
    **Validates**: FR-035–FR-038.
-2. Locate the sibling `.ndjson` file under
-   `%TEMP%\juanManriqueHexagon\TRACKER\`.
+2. Locate the sibling `.json` file under
+   `%LOCALAPPDATA%\juanManriqueHexagon\TRACKER\`.
    **Expected**: each line is an independent, valid JSON object (can be
    verified with any line-oriented tool, e.g.
-   `Get-Content file.ndjson | ForEach-Object { $_ | ConvertFrom-Json }`
+   `Get-Content file.json | ForEach-Object { $_ | ConvertFrom-Json }`
    in PowerShell with no line failing to parse). The content lets you
    determine without opening Revit: search-phase and execution-phase
    timings, whether the Instance or Type path was used, and outcome
    counts grouped by classification type and by element category.
    **Validates**: FR-039–FR-043, SC-007.
-3. Confirm that the base name (`revit-{runId}-{documentName}`) is
-   identical between the `.txt` and `.ndjson` of the same session.
+3. Confirm that the base name (`{runId}-{documentName}`) is
+   identical between the `.txt` and `.json` of the same session.
    **Validates**: FR-038 (pairing artifacts by name).
 
 ## Overall expected result

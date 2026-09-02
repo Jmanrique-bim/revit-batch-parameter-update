@@ -13,16 +13,17 @@
       <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="10,7">
         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Type parameters" />
       </Border>
-      <TextBlock DockPanel.Dock="Bottom"
-                 Background="{StaticResource WarnBackgroundBrush}"
-                 Foreground="{StaticResource WarnTextBrush}"
-                 BorderBrush="{StaticResource WarnBorderBrush}"
-                 BorderThickness="0,1,0,0"
-                 Padding="10,7"
-                 FontSize="11.5"
-                 TextWrapping="Wrap"
-                 Text="Updating a Type parameter changes every element in the model that shares that type, not only the current selection."
-                 Visibility="{Binding ShowWideBlastWarning, Converter={StaticResource BooleanToVisibilityConverter}}" />
+      <Border DockPanel.Dock="Bottom"
+              Background="{StaticResource WarnBackgroundBrush}"
+              BorderBrush="{StaticResource WarnBorderBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="10,7"
+              Visibility="{Binding ShowWideBlastWarning, Converter={StaticResource BooleanToVisibilityConverter}}">
+        <TextBlock Foreground="{StaticResource WarnTextBrush}"
+                   FontSize="11.5"
+                   TextWrapping="Wrap"
+                   Text="Updating a Type parameter changes every element in the model that shares that type, not only the current selection." />
+      </Border>
       <TextBlock DockPanel.Dock="Bottom"
                  Margin="10,8"
                  Foreground="{StaticResource MutedTextBrush}"
