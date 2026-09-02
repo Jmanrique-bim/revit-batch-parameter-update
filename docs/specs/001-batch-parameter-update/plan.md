@@ -1,5 +1,12 @@
 # Implementation Plan: Batch Parameter Update Revit Add-in
 
+> **Post-implementation note (2026-09-02):** This plan predates two changes. The
+> Type-parameter path it describes (Dialog Box 2, `TypeScope`, `ExecuteTypeUpdate`,
+> the model-wide blast radius) was **removed** — only the instance path shipped. The
+> flow was also refactored onto a single `BatchUpdateCoordinator` with event-based
+> tracing (`WorkflowEvent` / `SessionTraceListener`), and the installer targets the
+> per-user add-ins folder. See the reconciliation note at the top of [spec.md](./spec.md).
+
 **Branch**: `001-batch-parameter-update` | **Date**: 2026-08-31 | **Spec**: [spec.md](./spec.md)
 
 **Input**: Feature specification from `docs/specs/001-batch-parameter-update/spec.md`

@@ -1,5 +1,12 @@
 # Tasks: Batch Parameter Update Revit Add-in
 
+> **Post-implementation note (2026-09-02):** Tasks tagged `[US3]`/`[US4]` that build the
+> Type path (Dialog Box 2, `ParameterBinding`, `ExecuteTypeUpdate`, `TypeScope`,
+> `RequiresWideBlastRadiusWarning`, `TypeParameterDialog`) were completed and then
+> **reverted** — the shipped add-in is instance-only. Later work (single
+> `BatchUpdateCoordinator`, `WorkflowEvent` tracing, per-user installer, write-path
+> correctness fixes) is not tracked here. See [spec.md](./spec.md) reconciliation note.
+
 **Input**: Design documents in `docs/specs/001-batch-parameter-update/`
 
 **Prerequisites**: `plan.md` (required), `spec.md` (required, user stories), `research.md`, `data-model.md`, `contracts/ports.md`, `quickstart.md`, `.specify/memory/constitution.md`

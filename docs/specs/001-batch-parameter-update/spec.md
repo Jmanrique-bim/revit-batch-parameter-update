@@ -5,6 +5,23 @@
 **Status**: Draft
 **Input**: Deliver a Revit add-in (WPF, C#/.NET, Revit API 2025-2026) that batch-updates a writable text parameter across a user-selected set of elements via two operational search-and-replace paths shown simultaneously in one UI — Instance-bound parameters (Dialog Box 1) and Type-bound parameters (Dialog Box 2), filtered by a single shared search — with a 400/500 error-code taxonomy, non-blocking inline warnings, automatic suppression of native Revit dialogs during batch execution, per-session logging and NDJSON metrics persisted under the system Temp folder, and a Velopack-based installer with an interactive install/uninstall/update UI — extending the base "Revit Add-in: Batch Parameter Update" technical assessment with stakeholder-mandated architecture, observability, and packaging requirements.
 
+---
+
+## Post-implementation reconciliation (2026-09-02)
+
+The body of this document is the spec-kit history. The shipped add-in differs from it as follows; where the body and this note disagree, **this note is authoritative**:
+
+- **The Type-parameter path (Dialog Box 2) was removed.** Only writable **text instance** parameters are in scope — the base brief's requirement. There is one parameter panel, not two. Everything below about "Dialog Box 2", "Type-bound", "model-wide blast radius", the inline Type warning, `RequiresWideBlastRadiusWarning`, FR-008/FR-009 (Type half)/FR-014/FR-018, Key Entity "Type Parameter Candidate Set", and SC-010 no longer applies.
+- **Discovery is still a deduplicated union** over the current selection; per-element skips at execution time remain the expected outcome.
+- **Empty selection** now raises the mandated `ERR-500-EMPTY-SELECTION` when the user tries to advance (previously the code existed but was never raised). The manual-pick flow (User Story 2) is unchanged.
+- **Two new per-element skip reasons**: `ValueRejected` (`Parameter.Set` returned `false`) and `ElementNotFound` (element deleted after selection). A rolled-back transaction now surfaces `ERR-500-BATCH-ROLLED-BACK` instead of a phantom success count.
+- **Architecture**: the flow is owned by one `BatchUpdateCoordinator`; tracing is decoupled — the coordinator raises `WorkflowEvent`s and a single `SessionTraceListener` writes the `.txt` log and NDJSON. `INativeDialogSuppressionPort` was split into suppression + `IWorksharingStatusPort`. A `LayerDependencyTests` check enforces the hexagon.
+- **Installer** installs per-user (`%APPDATA%\Autodesk\Revit\Addins\<year>`), no admin rights.
+- **Progress** is a real determinate bar; see `docs/HOW_TO_MVVM.md` for the modal-thread caveat.
+- **Supported hosts: Revit 2025 and 2026 only.** Revit 2027 / .NET 10 is not targeted.
+
+---
+
 ## Overview
 
 This feature is a Revit add-in that lets a BIM user update the same text-based parameter across many model elements in one operation instead of editing each element by hand. It is aimed at BIM coordinators and modelers who routinely need to correct or standardize a text value (e.g., a status code, a comment, a classification tag) across a batch of elements they have identified in the model, either before or after opening the tool.
@@ -281,7 +298,7 @@ The following are treated as decisions already made by the stakeholder who commi
 - Undo/redo behavior beyond what Revit's native transaction/undo stack already provides.
 - Non-Windows platforms or non-Revit hosts.
 
-The original technical assessment brief estimated 4-6 hours of effort for the base flow (selection, single dialog, batch update, summary). The scope actually implemented in this submission — hexagonal architecture with ports and adapters, two simultaneous, jointly-searched parameter discovery/search/replace paths (Instance and Type), automatic suppression of native Revit dialogs during execution, a formal 400/500 classification catalog, per-session NDJSON metrics and logs persisted to disk, and a Velopack-based installer with its own install/uninstall/update UI — is materially larger than that estimate because it was explicitly expanded by the stakeholder to demonstrate the four delivery pillars (Functionality, Traceability, Observability, Testability) rather than the minimal base flow alone. This is documented here so evaluators reviewing effort-to-scope ratio understand the estimate applies to the base brief, not to the mandated expanded submission.
+The original technical assessment brief estimated 4-6 hours of effort for the base flow (selection, single dialog, batch update, summary). The scope actually implemented in this submission — hexagonal architecture with ports and adapters, a single instance-parameter discovery/search/replace path, automatic suppression of native Revit dialogs during execution, a formal 400/500 classification catalog, per-session NDJSON metrics and logs persisted to disk, and a Velopack-based per-user installer — is larger than that estimate because it demonstrates the four delivery pillars (Functionality, Traceability, Observability, Testability) rather than the minimal base flow alone. The Type-parameter path that an earlier revision of this spec added has been removed (see the reconciliation note at the top). This is documented here so evaluators reviewing effort-to-scope ratio understand the estimate applies to the base brief, not to the expanded submission.
 
 ## Dependencies
 
