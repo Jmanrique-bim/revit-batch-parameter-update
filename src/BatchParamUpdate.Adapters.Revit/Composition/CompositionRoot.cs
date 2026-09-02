@@ -67,7 +67,18 @@ public static class CompositionRoot
         var summary = new BatchSummaryViewModel(new CsvSkipReportExporter(), runId);
         var select = new SelectElementsViewModel(selectionPort, coordinator, manualPickAllowed, hideHost, showHost);
         var discovery = new ParameterDiscoveryViewModel(coordinator, search);
-        var replacement = new ReplacementValueViewModel(coordinator, execution, summary, revitBridge.RunAsync);
+
+        // Modeless: the window outlives Execute, so the write can fire after `doc` was closed or
+        // another document became active. Refuse it in the API context rather than opening a
+        // Transaction on a stale/inactive document.
+        Task RunOnRevit(Action work) => revitBridge.RunAsync(() =>
+        {
+            if (uiapp.ActiveUIDocument?.Document is not { } active || !ReferenceEquals(active, doc))
+                throw new InvalidOperationException("The target document is no longer active in Revit.");
+            work();
+        });
+
+        var replacement = new ReplacementValueViewModel(coordinator, execution, summary, RunOnRevit);
 
         var view = new MainViewModel(coordinator, select, search, discovery, replacement, execution, summary);
         return new CompositionResult(view, coordinator, revitBridge);

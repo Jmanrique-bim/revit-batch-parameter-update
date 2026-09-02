@@ -113,7 +113,13 @@ public sealed class BatchUpdateCoordinator
     public void RecordSearch(string text, IReadOnlyList<string> matches)
         => _observer.On(new WorkflowEvent.SearchRan(text, matches));
 
-    public BatchExecutionResult? Run(IProgress<BatchProgress>? progress = null)
+    /// <summary>
+    /// Snapshots the current scope, target and value into an operation the caller can run later.
+    /// The modeless window defers the write to an ExternalEvent, and <see cref="State"/> can
+    /// change between the user's click and that callback — the snapshot is what was confirmed.
+    /// Returns null (and blocks) when scope or target is missing.
+    /// </summary>
+    public ReplacementOperation? PrepareRun()
     {
         if (!State.Scope.IsValid)
         {
@@ -127,19 +133,29 @@ public sealed class BatchUpdateCoordinator
             return null;
         }
 
-        var operation = new ReplacementOperation(State.Target, State.NewValue, State.Scope);
-        _observer.On(new WorkflowEvent.BatchStarting(operation.TargetParameter.Name, operation.NewValue, State.Scope.ElementRefs.Count));
+        return new ReplacementOperation(State.Target, State.NewValue, State.Scope);
+    }
+
+    public BatchExecutionResult? Run(IProgress<BatchProgress>? progress = null)
+        => PrepareRun() is { } operation ? Run(operation, progress) : null;
+
+    public BatchExecutionResult? Run(ReplacementOperation operation, IProgress<BatchProgress>? progress = null)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        _observer.On(new WorkflowEvent.BatchStarting(
+            operation.TargetParameter.Name, operation.NewValue, operation.Scope.ElementRefs.Count));
 
         var before = _session.State;
         using var timer = PhaseTimer.Start();
-        LastResult = _run.Execute(_session, operation, State.Scope, progress ?? new Progress<BatchProgress>());
+        LastResult = _run.Execute(_session, operation, operation.Scope, progress ?? new Progress<BatchProgress>());
         var elapsed = timer.ElapsedMs;
         EmitStateChange(before, "run");
 
         LastError = _run.Error;
         if (LastResult is not null)
         {
-            _observer.On(new WorkflowEvent.BatchFinished(LastResult, State.Scope, elapsed));
+            _observer.On(new WorkflowEvent.BatchFinished(LastResult, operation.Scope, elapsed));
             if (LastResult.RolledBack)
                 _observer.On(new WorkflowEvent.FlowBlocked(ErrorCode.BatchRolledBack));
             else

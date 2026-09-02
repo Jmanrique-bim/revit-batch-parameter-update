@@ -68,6 +68,15 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         if (_execution.IsExecuting)
             return;
 
+        // Snapshot scope / target / value now, on the UI thread, before the write is deferred to
+        // the ExternalEvent — the inputs stay live until the callback runs, so State could change.
+        var operation = _coordinator.PrepareRun();
+        if (operation is null)
+        {
+            _summary.Show(null, _coordinator.LastError);
+            return;
+        }
+
         _execution.IsExecuting = true;
         NotifyCanRun();
         try
@@ -77,8 +86,14 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
             // draining input.
             var progress = new RenderPumpProgress(_execution.Report);
             BatchExecutionResult? result = null;
-            await _runOnRevit(() => result = _coordinator.Run(progress));
+            await _runOnRevit(() => result = _coordinator.Run(operation, progress));
             _summary.Show(result, _coordinator.LastError);
+        }
+        catch (Exception)
+        {
+            // The write threw inside the Revit API context (e.g. the target document was closed
+            // or is no longer active). Never let it escape async void and crash the host.
+            _summary.Show(null, ErrorCode.DocumentNotModifiable);
         }
         finally
         {

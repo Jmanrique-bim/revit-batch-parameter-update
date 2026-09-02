@@ -60,6 +60,30 @@ public sealed class BatchUpdateCoordinatorTests
     }
 
     [Fact]
+    public void PreparedRun_IsImmuneToStateMutationBeforeTheWrite()
+    {
+        var h = new CoordinatorHarness();
+        h.WithDiscovered("Comments");
+        h.WithPreExisting(new ElementRef("1", "Walls"));
+        h.Coordinator.EstablishSelection();
+        h.Coordinator.ChooseParameter(h.Coordinator.Candidates.Candidates[0]);
+        h.Coordinator.SetValue("confirmed");
+
+        var operation = h.Coordinator.PrepareRun();
+        Assert.NotNull(operation);
+
+        // The modeless window keeps the inputs live until the deferred write runs.
+        h.Coordinator.SetValue("changed-after-click");
+        h.Coordinator.AdoptManualSelection(
+            new SelectionContext([new ElementRef("99", "Doors")], SelectionOrigin.ManualPick));
+
+        h.Coordinator.Run(operation!, new Progress<BatchProgress>());
+
+        Assert.Equal("confirmed", h.Write.LastNewValue);
+        Assert.Equal(["1"], h.Write.LastScope!.ElementRefs.Select(e => e.Id));
+    }
+
+    [Fact]
     public void Run_WhenTransactionReverts_SurfacesRolledBackResult()
     {
         var h = new CoordinatorHarness();

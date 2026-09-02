@@ -34,7 +34,7 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 2. Search `Text` → `TextChanged` → `ParameterDiscoveryViewModel.RefreshFilters`; `MainViewModel` records the search via `coordinator.RecordSearch`.
 3. Selecting a parameter → `coordinator.ChooseParameter` → `DiscoverParametersUseCase.Choose`. Blocked with `ErrorCode.EmptySelection` if the scope is empty.
 4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue` + not already executing). `RelayCommand.RaiseCanExecuteChanged` covers the Revit host: `CommandManager` does not requery after `Hide` + `PickObjects` + `Show`.
-5. `Run()` is `async void`: sets `IsExecuting`, `await`s `_runOnRevit(() => coordinator.Run(new RenderPumpProgress(...)))`, then `BatchSummaryViewModel.Show`. `_runOnRevit` is the `RevitApiEventBridge` in the Revit host (inline default elsewhere).
+5. `Run()` is `async void`: it first calls `coordinator.PrepareRun()` **synchronously** to snapshot scope/target/value into a `ReplacementOperation` (the inputs stay live during the deferred write, so State could otherwise change between click and callback), then sets `IsExecuting` and `await`s `_runOnRevit(() => coordinator.Run(operation, new RenderPumpProgress(...)))`, then `BatchSummaryViewModel.Show`. A `catch` maps any write exception (e.g. the document was closed) to a `DocumentNotModifiable` summary so it never escapes `async void`. `_runOnRevit` is the `RevitApiEventBridge` in the Revit host (inline default elsewhere).
 
 ## Progress bar
 
@@ -47,3 +47,5 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 ## Constraint
 
 The window is modeless (`Show` on the Revit command; a static `_open` guard refocuses it on a second ribbon click). The batch write must go through `RevitApiEventBridge` (a modeless add-in can only open a `Transaction` from an ExternalEvent callback). `PickObjects` and read-only re-discovery still run as direct calls on the UI/Revit main thread; the window is hidden only for `PickObjects`. `BatchParameterUpdateCommand.Closed` calls `coordinator.Complete()` and disposes the bridge + logger.
+
+Because the window outlives `Execute`, it is tied to its document: the command subscribes to `Application.DocumentClosing` and closes the window when the launch document closes, and `CompositionRoot` wraps `RunAsync` so the write refuses (throws, caught by the VM) if `ActiveUIDocument.Document` is no longer the launch document. The write it runs is the `PrepareRun()` snapshot, not whatever `State` holds at callback time.

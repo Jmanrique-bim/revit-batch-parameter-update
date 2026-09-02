@@ -19,6 +19,8 @@ Purpose: write one replacement string onto the chosen writable text **instance**
 
 `RunBatchUpdateUseCase.Execute` re-checks `operation.HasReplacementValue` (else `ErrorCode.EmptyValue`, no write). Session then `Executing`.
 
+The VM snapshots scope/target/value via `coordinator.PrepareRun()` at click time and passes that `ReplacementOperation` to `coordinator.Run(operation, progress)`; the modeless window defers the write to an ExternalEvent, so the snapshot — not later `State` edits — is what runs.
+
 ## The write
 
 `RevitParameterWritePort.Execute` opens one transaction `"Batch Parameter Update"`. For each `ElementRef` it builds a `ParameterState` and hands it to `ParameterWriteDecision.Evaluate(state, trySet)`. The decision order:
