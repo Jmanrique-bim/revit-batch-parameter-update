@@ -1,7 +1,6 @@
 using System.Windows.Interop;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
-using Autodesk.Revit.DB.Events;
 using Autodesk.Revit.UI;
 using BatchParamUpdate.Adapters.Revit.Composition;
 using BatchParamUpdate.Core;
@@ -61,30 +60,29 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
         new WindowInteropHelper(window).Owner = uiapp.MainWindowHandle;
         window.Bind(composition.View);
 
-        // Modeless: the window would otherwise outlive its document. Close it when that document
-        // closes so a later Run can't target a disposed Document.
-        // ponytail: DocumentClosing is cancelable; if the user then cancels the close we've still
-        // shut our window. Acceptable — reopen the tool. DocumentClosed doesn't hand back the
-        // Document to compare, so we key off Closing.
-        void OnDocumentClosing(object? sender, DocumentClosingEventArgs e)
-        {
-            if (ReferenceEquals(e.Document, doc))
-                window?.Close();
-        }
-
-        uiapp.Application.DocumentClosing += OnDocumentClosing;
+        // Closed fires on the WPF loop, outside a Revit API context — keep only non-API work here.
+        // If the document is closed while the window is open, the write is refused by the
+        // `IsValidObject` guard in CompositionRoot and the VM shows an error; the window is not
+        // auto-closed (subscribing Application.DocumentClosing would need an API context to
+        // unsubscribe on normal close, and leaking the handler holds the document).
         window.Closed += (_, _) =>
         {
-            uiapp.Application.DocumentClosing -= OnDocumentClosing;
+            _open = null;
             try
             {
                 composition.Coordinator.Complete();
             }
             finally
             {
-                composition.RevitBridge.Dispose();
                 logger.Dispose();
-                _open = null;
+                try
+                {
+                    composition.RevitBridge.Dispose();
+                }
+                catch (Autodesk.Revit.Exceptions.InvalidOperationException)
+                {
+                    // Not in an API context on this close; Revit releases the ExternalEvent on shutdown.
+                }
             }
         };
 
