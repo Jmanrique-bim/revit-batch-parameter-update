@@ -10,6 +10,12 @@ public sealed class RevitInstallerAdapter : IInstallerPort
     public IReadOnlyList<int> DetectInstalledRevitYears()
         => InstallerPackage.SupportedRevitYears.Where(YearIsInstalled).ToArray();
 
+    public bool IsAddinInstalled(int revitYear)
+    {
+        EnsureSupported(revitYear);
+        return File.Exists(Path.Combine(AddinsFolder(revitYear), $"BatchParamUpdate.Adapters.Revit.{revitYear}.addin"));
+    }
+
     public void Install(int revitYear)
     {
         EnsureSupported(revitYear);

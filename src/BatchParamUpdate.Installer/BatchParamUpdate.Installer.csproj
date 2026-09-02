@@ -16,5 +16,6 @@
   <ItemGroup>
     <ApplicationDefinition Remove="App.xaml" />
     <Page Include="App.xaml" />
+    <Page Include="..\BatchParamUpdate.UI.Wpf\Theme.xaml" Link="Theme.xaml" />
   </ItemGroup>
 </Project>
