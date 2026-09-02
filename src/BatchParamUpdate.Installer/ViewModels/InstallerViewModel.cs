@@ -19,7 +19,7 @@ public sealed class InstallerViewModel : INotifyPropertyChanged
             .Select(year => new DetectedRevitYearViewModel(year, this, port))
             .ToArray();
         if (Years.Count == 0)
-            Status = "No supported Revit version (2025, 2026, or 2027) was detected.";
+            Status = "No supported Revit version (2025 or 2026) was detected.";
     }
 
     public IReadOnlyList<DetectedRevitYearViewModel> Years { get; }

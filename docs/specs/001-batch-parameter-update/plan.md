@@ -6,7 +6,7 @@
 
 ## Summary
 
-Revit add-in (WPF, C#/.NET, Revit API 2025/2026/2027) that batch-updates a
+Revit add-in (WPF, C#/.NET, Revit API 2025/2026) that batch-updates a
 text parameter across a selection of elements, resolved automatically by
 the parameter's real Revit binding: Instance-bound (Dialog Box 1) or
 Type-bound (Dialog Box 2), both shown at once and filtered by a single
@@ -30,7 +30,7 @@ installs/updates/uninstalls the add-in per year.
 ## Technical Context
 
 **Language/Version**: C# 12 / .NET — `net8.0-windows` for the Revit 2025
-and 2026 configurations, `net10.0-windows` for Revit 2027 (see
+and 2026 year projects (see
 `research.md` §a; documented risk on the real patch level of 2025/2026
 on the evaluation machine).
 
@@ -52,7 +52,7 @@ validation of the real `Adapters.Revit` against a Revit session following
 out of CI scope for this exercise).
 
 **Target Platform**: Windows 10/11 desktop, inside the Autodesk Revit
-2025, 2026, or 2027 process (add-in), plus a standalone WPF process for
+2025 or 2026 process (add-in), plus a standalone WPF process for
 the Velopack `Installer` (standalone installer host, following researched
 patterns / reference sources).
 
@@ -146,7 +146,7 @@ src/
 │   ├── App.cs                            #   IExternalApplication: OnStartup registers
 │   ├── Resources/                        #   lineal-color optimization PNGs (64/100 sourced;
 │   │                                     #   16/32 derived at implementation if needed)
-│   ├── Selection/                        #   Imported by the three year projects below.
+│   ├── Selection/                        #   Imported by the two year projects below.
 │   ├── Discovery/                        #   Only this source tree talks to RevitAPI.dll
 │   ├── Writing/                          #   (via the year shells).
 │   ├── DialogSuppression/
@@ -154,7 +154,6 @@ src/
 │   └── Year.props                        #   Shared TFM / HintPath / Debug deploy
 ├── BatchParamUpdate.Adapters.Revit.2025/ # Thin year shell: net8.0-windows + Revit 2025 API + .addin
 ├── BatchParamUpdate.Adapters.Revit.2026/ # Thin year shell: net8.0-windows + Revit 2026 API + .addin
-├── BatchParamUpdate.Adapters.Revit.2027/ # Thin year shell: net10.0-windows + Revit 2027 API + .addin
 │
 ├── BatchParamUpdate.Adapters.Persistence/ # IMetricsPort/ISessionRecorderPort:
 │                                          #   NDJSON + .txt under %TEMP%\juanManriqueHexagon
@@ -185,7 +184,7 @@ Revit
 ```
 
 **Structure Decision**: Single solution (`BatchParamUpdate.sln`) with
-projects split by hexagonal layer. Revit years are three thin projects
+projects split by hexagonal layer. Revit years are two thin projects
 that import one Shared Project (`Adapters.Revit`), not six
 solution configurations and not three separate solutions. `Domain` and
 `Application` are year-neutral Class Libraries (`net8.0`, no `-windows`,
@@ -208,7 +207,7 @@ command-only registration. Ribbon wiring is adapter-only (YAGNI: no
 
 | Deviation | Why it is needed | Simpler alternative rejected because |
 |---|---|---|
-| Per-year adapter projects (`Adapters.Revit.2025`/`.2026`/`.2027`) sharing one `.projitems` source tree, with `net8.0-windows` vs `net10.0-windows` | FR-048 mandates 2025/2026/2027 from one codebase; research (research.md §a) confirmed a single TFM would be technically wrong because Revit 2027 ships on .NET 10, and a single csproj with year-named configurations cannot emit all three years in one solution build | A single TFM (`net8.0-windows`) does not compile against Revit 2027; six `Debug20XX` configurations produce only one year per build |
+| Per-year adapter projects (`Adapters.Revit.2025`/`.2026`) sharing one `.projitems` source tree | FR-048 mandates 2025/2026 from one codebase; a single csproj with year-named configurations cannot emit both years in one solution build | Six `Debug20XX` configurations produce only one year per build |
 | 7 ports/interfaces in `Domain` instead of calling the Revit API directly from business logic | Explicit architectural mandate (Assumptions → "Architecture") so discovery/classification/orchestration logic is testable without Revit running (Testability pillar) | Without ports, `Domain`/`Application` would depend on `RevitAPI.dll`, unit tests would require Revit installed and running, contradicting the mandated Testability pillar |
 
 ## Progress Tracking

@@ -15,27 +15,10 @@ function Assert-NativeExit {
     }
 }
 
-function Test-DotNet10Sdk {
-    $sdks = & dotnet --list-sdks
-    Assert-NativeExit "dotnet --list-sdks"
-    foreach ($line in $sdks) {
-        if ($line -match '^10\.') { return $true }
-    }
-    return $false
-}
-
 dotnet publish (Join-Path $installerDir "BatchParamUpdate.Installer.csproj") -c Release -o $publish
 Assert-NativeExit "dotnet publish (Installer)"
 
-foreach ($year in 2025, 2026, 2027) {
-    if ($year -eq 2027 -and -not (Test-DotNet10Sdk)) {
-        throw @"
-.NET 10 SDK is required to pack Revit 2027 (TargetFramework net10.0-windows).
-Install it from https://aka.ms/dotnet/download then re-run pack.ps1.
-Without it, the 2027 add-in cannot be built and the Velopack package would be incomplete.
-"@
-    }
-
+foreach ($year in 2025, 2026) {
     $yearProj = Join-Path $repo "src\BatchParamUpdate.Adapters.Revit.$year\BatchParamUpdate.Adapters.Revit.$year.csproj"
     $addinSrc = Join-Path $repo "src\BatchParamUpdate.Adapters.Revit.$year"
     $outDir = Join-Path $publish "addins\$year"
