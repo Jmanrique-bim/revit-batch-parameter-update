@@ -12,11 +12,27 @@ public sealed class FakeInstallerPort : IInstallerPort
 
     public List<int> UninstallCalls { get; } = [];
 
+    public HashSet<int> PackagedAddins { get; } = [];
+
     public IReadOnlyList<int> DetectInstalledRevitYears() => InstalledYears;
 
-    public void Install(int revitYear) => InstallCalls.Add(revitYear);
+    public bool IsAddinInstalled(int revitYear) => PackagedAddins.Contains(revitYear);
 
-    public void Update(int revitYear) => UpdateCalls.Add(revitYear);
+    public void Install(int revitYear)
+    {
+        InstallCalls.Add(revitYear);
+        PackagedAddins.Add(revitYear);
+    }
 
-    public void Uninstall(int revitYear) => UninstallCalls.Add(revitYear);
+    public void Update(int revitYear)
+    {
+        UpdateCalls.Add(revitYear);
+        PackagedAddins.Add(revitYear);
+    }
+
+    public void Uninstall(int revitYear)
+    {
+        UninstallCalls.Add(revitYear);
+        PackagedAddins.Remove(revitYear);
+    }
 }

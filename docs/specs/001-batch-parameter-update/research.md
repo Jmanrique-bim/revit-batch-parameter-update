@@ -372,10 +372,19 @@ app Velopack packages (`vpk pack`), **not** the Revit add-in itself
 (Revit loads DLLs via an `.addin` manifest; it does not run a `.exe`).
 The flow:
 
-1. `vpk pack -u BatchParamUpdate -v <version> -p <Installer-publishDir> -e Installer.exe`
-   produces `Setup.exe` + the release package, signable with a
-   certificate-signing pattern according to research (optional
-   `tools/Sign` if a cert is later provided; none is assumed here).
+1. The `Installer` host references Velopack 1.2.0 and calls
+   `VelopackApp.Build().Run()` as the first statement in `Program.Main`
+   (before any WPF window). `vpk pack` 1.2.0 refuses binaries that omit
+   this hook. `pack.ps1` is the pack entry point: it publishes the
+   installer, builds year payloads 2025/2026/2027, and runs
+   `vpk pack -u BatchParamUpdate -v <version> -p <Installer-publishDir> -e Installer.exe`.
+   Native `dotnet` / `vpk` failures abort the script. Packing 2027
+   requires a .NET 10 SDK (`net10.0-windows`); without it the script
+   fails with a pointer to https://aka.ms/dotnet/download rather than
+   emitting an incomplete package. The pack produces `Setup.exe` + the
+   release package, signable with a certificate-signing pattern according
+   to research (optional `tools/Sign` if a cert is later provided; none
+   is assumed here).
 2. When running `Setup.exe` / opening the installed `Installer.exe`, the
    interactive UI (FR-047):
    - Detects installed Revit versions by checking

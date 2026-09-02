@@ -16,7 +16,7 @@ public sealed class InstallerViewModel : INotifyPropertyChanged
         _port = port;
         var package = new InstallerPackage(port.DetectInstalledRevitYears());
         Years = package.DetectedRevitYears
-            .Select(year => new DetectedRevitYearViewModel(year, this))
+            .Select(year => new DetectedRevitYearViewModel(year, this, port))
             .ToArray();
         if (Years.Count == 0)
             Status = "No supported Revit version (2025, 2026, or 2027) was detected.";
@@ -55,6 +55,8 @@ public sealed class InstallerViewModel : INotifyPropertyChanged
                     break;
             }
 
+            foreach (var row in Years)
+                row.Refresh();
             Status = $"{action} completed for Revit {year}.";
         }
         catch (Exception ex)
@@ -67,23 +69,39 @@ public sealed class InstallerViewModel : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-public sealed class DetectedRevitYearViewModel
+public sealed class DetectedRevitYearViewModel : INotifyPropertyChanged
 {
-    public DetectedRevitYearViewModel(int year, InstallerViewModel owner)
+    private readonly IInstallerPort _port;
+    private bool _addinInstalled;
+
+    public DetectedRevitYearViewModel(int year, InstallerViewModel owner, IInstallerPort port)
     {
         Year = year;
-        InstallCommand = new ActionCommand(() => owner.Run(year, InstallerAction.Install));
-        UpdateCommand = new ActionCommand(() => owner.Run(year, InstallerAction.Update));
+        _port = port;
+        _addinInstalled = port.IsAddinInstalled(year);
+        PrimaryCommand = new ActionCommand(() =>
+            owner.Run(year, _addinInstalled ? InstallerAction.Update : InstallerAction.Install));
         UninstallCommand = new ActionCommand(() => owner.Run(year, InstallerAction.Uninstall));
     }
 
     public int Year { get; }
 
-    public ICommand InstallCommand { get; }
+    public string PrimaryLabel => _addinInstalled ? "Update" : "Install";
 
-    public ICommand UpdateCommand { get; }
+    public string YearStatus => _addinInstalled ? "Installed" : "Not installed";
+
+    public ICommand PrimaryCommand { get; }
 
     public ICommand UninstallCommand { get; }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    internal void Refresh()
+    {
+        _addinInstalled = _port.IsAddinInstalled(Year);
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(PrimaryLabel)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(YearStatus)));
+    }
 }
 
 internal sealed class ActionCommand(Action execute) : ICommand

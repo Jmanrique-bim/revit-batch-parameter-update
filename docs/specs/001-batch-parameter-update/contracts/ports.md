@@ -214,6 +214,7 @@ file-copy logic directly.
 public interface IInstallerPort
 {
     IReadOnlyList<int> DetectInstalledRevitYears();   // FR-047
+    bool IsAddinInstalled(int revitYear);
 
     void Install(int revitYear);
     void Update(int revitYear);
