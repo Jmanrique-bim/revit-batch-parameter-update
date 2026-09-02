@@ -15,6 +15,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
     private readonly RunBatchUpdateUseCase _run;
     private readonly BatchExecutionViewModel _execution;
     private readonly BatchSummaryViewModel _summary;
+    private readonly RecordSessionUseCase? _record;
     private string _newValue = "";
 
     public ReplacementValueViewModel(
@@ -23,7 +24,8 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         Session session,
         RunBatchUpdateUseCase run,
         BatchExecutionViewModel execution,
-        BatchSummaryViewModel summary)
+        BatchSummaryViewModel summary,
+        RecordSessionUseCase? record = null)
     {
         _operation = operation;
         _scope = scope;
@@ -31,13 +33,16 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         _run = run;
         _execution = execution;
         _summary = summary;
+        _record = record;
         RunCommand = new RelayCommand(Run, () => CanRun);
+        LogGate("init");
     }
 
-    public void NotifyCanRun()
+    public void NotifyCanRun(string requery = "raised")
     {
         OnPropertyChanged(nameof(CanRun));
         (RunCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        LogGate(requery);
     }
 
     public string NewValue
@@ -50,7 +55,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
             _newValue = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ValidationMessage));
-            NotifyCanRun();
+            NotifyCanRun("value");
         }
     }
 
@@ -71,21 +76,56 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         var operation = _operation()?.WithNewValue(NewValue);
         if (operation is null || !operation.HasReplacementValue)
         {
+            _record?.Trace(
+                "ui",
+                "run",
+                "blocked",
+                ("reason", operation is null ? "noOperation" : "emptyValue"),
+                ("session", _session.State),
+                ("canRun", CanRun));
             OnPropertyChanged(nameof(ValidationMessage));
+            LogGate("blocked");
             return;
         }
 
+        _record?.Trace(
+            "ui",
+            "run",
+            "click",
+            ("session", _session.State),
+            ("binding", operation.TargetParameter.Binding),
+            ("name", operation.TargetParameter.Name),
+            ("scope", _scope().ElementRefs.Count));
         _execution.IsExecuting = true;
         try
         {
             var result = _run.Execute(_session, operation, _scope());
             _summary.Show(result, _run.Error);
+            _record?.Trace(
+                "ui",
+                "summary",
+                "shown",
+                ("ok", _run.Error is null && result is not null),
+                ("skips", _summary.HasSkips),
+                ("session", _session.State));
         }
         finally
         {
             _execution.IsExecuting = false;
-            NotifyCanRun();
+            NotifyCanRun("done");
         }
+    }
+
+    private void LogGate(string requery)
+    {
+        var command = RunCommand as RelayCommand;
+        _record?.TraceGate(
+            ("enabled", CanRun),
+            ("session", _session.State),
+            ("hasValue", !string.IsNullOrWhiteSpace(NewValue)),
+            ("hasOperation", _operation() is not null),
+            ("requery", requery),
+            ("subscribers", command?.ListenerCount ?? 0));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

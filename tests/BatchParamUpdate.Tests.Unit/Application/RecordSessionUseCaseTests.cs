@@ -88,6 +88,52 @@ public sealed class RecordSessionUseCaseTests
             && line.Contains(ErrorWarningCatalog.Message(WarningCode.SessionRecordFailed)));
     }
 
+    [Fact]
+    public void Trace_WritesLayeredTsvLine()
+    {
+        var logger = new FakeLoggerPort();
+        var useCase = new RecordSessionUseCase(new FakeSessionRecorderPort(), logger, Identity);
+
+        useCase.Trace("ui", "run", "click", ("session", SessionState.AwaitingReplacementValue), ("name", "Comments"));
+
+        Assert.Contains(
+            logger.Lines,
+            line => line == "INFO ui\trun\tclick\tsession=AwaitingReplacementValue name=Comments");
+    }
+
+    [Fact]
+    public void TraceState_SkipsWhenUnchanged_WritesWhenTransitioned()
+    {
+        var logger = new FakeLoggerPort();
+        var useCase = new RecordSessionUseCase(new FakeSessionRecorderPort(), logger, Identity);
+        var session = new Session();
+
+        useCase.TraceState(SessionState.Started, session, "empty");
+        Assert.DoesNotContain(logger.Lines, line => line.Contains("model\tsession\tstate"));
+
+        session.TransitionTo(SessionState.Discovering);
+        useCase.TraceState(SessionState.Started, session, "preselect");
+        Assert.Contains(
+            logger.Lines,
+            line => line == "INFO model\tsession\tstate\tfrom=Started to=Discovering cause=preselect");
+    }
+
+    [Fact]
+    public void TraceGate_DedupesIdenticalFacts_LogsWhenGateChanges()
+    {
+        var logger = new FakeLoggerPort();
+        var useCase = new RecordSessionUseCase(new FakeSessionRecorderPort(), logger, Identity);
+
+        useCase.TraceGate(("enabled", false), ("session", SessionState.AwaitingReplacementValue), ("hasValue", true), ("subscribers", 0));
+        useCase.TraceGate(("enabled", false), ("session", SessionState.AwaitingReplacementValue), ("hasValue", true), ("subscribers", 0));
+        useCase.TraceGate(("enabled", false), ("session", SessionState.AwaitingReplacementValue), ("hasValue", true), ("subscribers", 1));
+
+        var gates = logger.Lines.Where(line => line.Contains("ui\trun\tgate", StringComparison.Ordinal)).ToList();
+        Assert.Equal(2, gates.Count);
+        Assert.Contains(gates, line => line.Contains("subscribers=0"));
+        Assert.Contains(gates, line => line.Contains("subscribers=1"));
+    }
+
     private static Session SessionIn(SessionState final)
     {
         var session = new Session();

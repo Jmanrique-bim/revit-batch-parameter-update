@@ -34,5 +34,7 @@ internal sealed class RelayCommand : ICommand
     // ponytail: CommandManager dies after Revit PickObjects; Raise is the host workaround.
     public void RaiseCanExecuteChanged() => _canExecuteChanged?.Invoke(this, EventArgs.Empty);
 
+    public int ListenerCount => _canExecuteChanged?.GetInvocationList().Length ?? 0;
+
     private event EventHandler? _canExecuteChanged;
 }

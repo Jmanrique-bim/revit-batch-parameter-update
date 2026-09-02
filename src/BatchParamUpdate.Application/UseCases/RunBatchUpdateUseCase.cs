@@ -36,12 +36,29 @@ public sealed class RunBatchUpdateUseCase
         {
             Error = ErrorCode.EmptyValue;
             _logger?.Error(ErrorWarningCatalog.Message(ErrorCode.EmptyValue), ErrorCode.EmptyValue);
+            _recorder?.Trace(
+                "ui",
+                "run",
+                "blocked",
+                ("reason", "emptyValue"),
+                ("session", session.State));
             return null;
         }
 
+        var from = session.State;
         session.TransitionTo(SessionState.Executing);
-        _logger?.Info(
-            $"Execute {operation.TargetParameter.Binding} {operation.TargetParameter.Name}='{operation.NewValue}' scope={scope.ElementRefs.Count}");
+        _recorder?.TraceState(from, session, "run");
+        _recorder?.Trace(
+            "model",
+            "run",
+            "start",
+            ("binding", operation.TargetParameter.Binding),
+            ("name", operation.TargetParameter.Name),
+            ("value", operation.NewValue),
+            ("scope", scope.ElementRefs.Count));
+        if (_recorder is null)
+            _logger?.Info(
+                $"Execute {operation.TargetParameter.Binding} {operation.TargetParameter.Name}='{operation.NewValue}' scope={scope.ElementRefs.Count}");
         using var timer = PhaseTimer.Start();
 
         var result = operation.TargetParameter.Binding == ParameterBinding.Instance
@@ -53,7 +70,9 @@ public sealed class RunBatchUpdateUseCase
         if (result is null)
         {
             Error = ErrorCode.DocumentNotModifiable;
+            from = session.State;
             session.TransitionTo(SessionState.Blocked);
+            _recorder?.TraceState(from, session, "run");
             _logger?.Error(
                 ErrorWarningCatalog.Message(ErrorCode.DocumentNotModifiable),
                 ErrorCode.DocumentNotModifiable);
@@ -64,7 +83,9 @@ public sealed class RunBatchUpdateUseCase
         LogOutcome(result, scope);
         _recorder?.RecordBatch(result, scope);
         Error = null;
+        from = session.State;
         session.TransitionTo(SessionState.AwaitingReplacementValue);
+        _recorder?.TraceState(from, session, "run");
         return result;
     }
 

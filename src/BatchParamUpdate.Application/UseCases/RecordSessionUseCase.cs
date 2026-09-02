@@ -1,3 +1,4 @@
+using BatchParamUpdate.Core;
 using BatchParamUpdate.Domain.ErrorCatalog;
 using BatchParamUpdate.Domain.Model;
 using BatchParamUpdate.Domain.Ports;
@@ -11,6 +12,7 @@ public sealed class RecordSessionUseCase
     private readonly SessionRecord _identity;
     private BatchExecutionResult? _lastBatch;
     private bool _ended;
+    private string? _lastGate;
 
     public RecordSessionUseCase(ISessionRecorderPort recorder, ILoggerPort logger, SessionRecord identity)
     {
@@ -50,6 +52,26 @@ public sealed class RecordSessionUseCase
         => SafeRecord(new PhaseTiming(_identity.SessionId, DateTimeOffset.UtcNow, phase, elapsedMs));
 
     public void Trace(string message) => _logger.Info(message);
+
+    public void Trace(string layer, string surface, string evt, params (string Key, object? Value)[] facts)
+        => _logger.Info(SessionTrace.Line(layer, surface, evt, facts));
+
+    public void TraceState(SessionState from, Session session, string cause)
+    {
+        if (from == session.State)
+            return;
+        Trace("model", "session", "state", ("from", from), ("to", session.State), ("cause", cause));
+    }
+
+    // ponytail: identical CanExecute polls would flood; log a gate line only when facts change.
+    public void TraceGate(params (string Key, object? Value)[] facts)
+    {
+        var line = SessionTrace.Line("ui", "run", "gate", facts);
+        if (line == _lastGate)
+            return;
+        _lastGate = line;
+        _logger.Info(line);
+    }
 
     public void RecordBatch(BatchExecutionResult result, SelectionContext scope)
     {

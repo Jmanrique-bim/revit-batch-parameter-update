@@ -25,7 +25,13 @@ public sealed class DiscoverParametersUseCase
         var type = _discovery.DiscoverTypeCandidates(scope);
         _recorder?.RecordPhaseTiming("Discovery", timer.ElapsedMs);
         _recorder?.Trace(
-            $"Discovery scope={scope.ElementRefs.Count} origin={scope.Origin} instance={instance.Candidates.Count} type={type.Candidates.Count}");
+            "model",
+            "discovery",
+            "done",
+            ("scope", scope.ElementRefs.Count),
+            ("origin", scope.Origin),
+            ("instance", instance.Candidates.Count),
+            ("type", type.Candidates.Count));
         return (instance, type);
     }
 
@@ -37,21 +43,31 @@ public sealed class DiscoverParametersUseCase
         if (candidate is null)
         {
             Error = ErrorCode.NoParameterSelected;
-            _recorder?.Trace("Choose blocked: no parameter selected");
+            _recorder?.Trace("model", "param", "blocked", ("reason", "noParameter"), ("session", session.State));
             return null;
         }
 
         Error = null;
 
+        var from = session.State;
         if (session.State == SessionState.Started && scope.IsValid)
             session.TransitionTo(SessionState.Discovering);
+        _recorder?.TraceState(from, session, "choose");
 
+        from = session.State;
         if (session.State == SessionState.Discovering)
             session.TransitionTo(SessionState.AwaitingReplacementValue);
+        _recorder?.TraceState(from, session, "choose");
 
         if (session.State != SessionState.AwaitingReplacementValue)
         {
-            _recorder?.Trace("Choose blocked: session not awaiting replacement");
+            _recorder?.Trace(
+                "model",
+                "param",
+                "blocked",
+                ("reason", "session"),
+                ("session", session.State),
+                ("scopeValid", scope.IsValid));
             return null;
         }
 

@@ -9,7 +9,7 @@ public sealed class SessionFileLogger : ILoggerPort, IDisposable
     {
         Directory.CreateDirectory(SessionStoragePaths.LogsDir);
         FilePath = SessionStoragePaths.LogFile(runId, documentName);
-        Info($"Creating log at: {FilePath}");
+        Info(SessionTrace.Line("cmd", "log", "open", ("path", FilePath)));
     }
 
     public string FilePath { get; }
