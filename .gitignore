@@ -21,4 +21,5 @@ Thumbs.db
 .cursor/
 .specify/
 ref docs/
+docs/diagrams/
 PR_SUMMARY.md
