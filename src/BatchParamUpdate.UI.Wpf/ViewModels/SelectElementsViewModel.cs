@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using BatchParamUpdate.Application.UseCases;
 using BatchParamUpdate.Domain.Model;
 using BatchParamUpdate.Domain.Ports;
 
@@ -10,6 +11,7 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
 {
     private readonly IElementSelectionPort? _selection;
     private readonly Session? _session;
+    private readonly RecordSessionUseCase? _record;
     private readonly Action? _beforePick;
     private readonly Action? _afterPick;
     private SelectionContext _context;
@@ -24,11 +26,13 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
         IElementSelectionPort? selectionPort,
         Session? session,
         Action? beforePick = null,
-        Action? afterPick = null)
+        Action? afterPick = null,
+        RecordSessionUseCase? record = null)
     {
         _context = selection;
         _selection = selectionPort;
         _session = session;
+        _record = record;
         _beforePick = beforePick;
         _afterPick = afterPick;
         SelectElementsCommand = new RelayCommand(PickManually, () => IsSelectElementsEnabled);
@@ -49,6 +53,12 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
         if (_selection is null)
             return;
 
+        _record?.Trace(
+            "ui",
+            "select",
+            "pick.start",
+            ("session", _session?.State),
+            ("enabled", IsSelectElementsEnabled));
         _beforePick?.Invoke();
         SelectionContext? picked;
         try
@@ -61,15 +71,37 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
         }
 
         if (picked is not { IsValid: true })
+        {
+            _record?.Trace("ui", "window", "show", ("cause", "pick"));
+            _record?.Trace(
+                "ui",
+                "select",
+                "pick.end",
+                ("valid", false),
+                ("session", _session?.State));
             return;
+        }
 
         _context = picked;
+        var from = _session?.State;
         if (_session is { State: SessionState.Started })
             _session.TransitionTo(SessionState.Discovering);
 
         OnPropertyChanged(nameof(Selection));
         OnPropertyChanged(nameof(HasNoElementsInScope));
         OnPropertyChanged(nameof(IsSelectElementsEnabled));
+
+        if (_session is not null && from is { } previous)
+            _record?.TraceState(previous, _session, "pick");
+        _record?.Trace("ui", "window", "show", ("cause", "pick"));
+        _record?.Trace(
+            "ui",
+            "select",
+            "pick.end",
+            ("valid", true),
+            ("origin", _context.Origin),
+            ("count", _context.ElementRefs.Count),
+            ("session", _session?.State));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

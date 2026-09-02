@@ -47,7 +47,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             logger,
             new SessionRecord(runId, documentName, DateTimeOffset.UtcNow));
         record.Start();
-        record.Trace($"Command start document={doc.Title} runId={runId}");
+        record.Trace("cmd", "command", "start", ("document", doc.Title), ("runId", runId));
 
         var session = new Session();
         try
@@ -55,10 +55,19 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             var selectionPort = new RevitElementSelectionPort(uidoc);
             var establish = new EstablishSelectionUseCase(selectionPort);
             var preExisting = selectionPort.GetPreExistingSelection();
+            var from = session.State;
             var scope = preExisting.IsValid
                 ? establish.Execute(session)
                 : new SelectionContext([], SelectionOrigin.ManualPick);
-            record.Trace($"Selection origin={scope.Origin} count={scope.ElementRefs.Count}");
+            record.TraceState(from, session, preExisting.IsValid ? "preselect" : "empty");
+            record.Trace(
+                "ui",
+                "select",
+                "ready",
+                ("origin", scope.Origin),
+                ("count", scope.ElementRefs.Count),
+                ("valid", scope.IsValid),
+                ("session", session.State));
 
             var discoveryPort = new RevitParameterDiscoveryPort(doc);
             var discover = new DiscoverParametersUseCase(discoveryPort, record);
@@ -67,7 +76,11 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
                 : (new InstanceParameterCandidateSet([]), new TypeParameterCandidateSet([]));
 
             if (scope.IsValid && session.State == SessionState.Started)
+            {
+                var started = session.State;
                 session.TransitionTo(SessionState.Discovering);
+                record.TraceState(started, session, "scope");
+            }
 
             var searchVm = new SharedSearchViewModel(new SharedSearchQuery(instanceSet, typeSet));
             var discoveryVm = new ParameterDiscoveryViewModel(discover, scope, session, searchVm);
@@ -82,7 +95,8 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
                 selectionPort,
                 session,
                 beforePick: () => window?.Hide(),
-                afterPick: () => window?.Show());
+                afterPick: () => window?.Show(),
+                record: record);
 
             var replacementVm = new ReplacementValueViewModel(
                 () => discoveryVm.Operation,
@@ -90,7 +104,8 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
                 session,
                 run,
                 executionVm,
-                summaryVm);
+                summaryVm,
+                record);
 
             selectVm.PropertyChanged += (_, args) =>
             {
@@ -102,7 +117,15 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
                 var (instance, type) = discover.Discover(next);
                 discoveryVm.Retarget(next);
                 searchVm.ReplaceSets(instance, type);
-                record.Trace($"Selection updated origin={next.Origin} count={next.ElementRefs.Count}");
+                record.Trace(
+                    "ui",
+                    "select",
+                    "changed",
+                    ("origin", next.Origin),
+                    ("count", next.ElementRefs.Count),
+                    ("session", session.State),
+                    ("canRun", replacementVm.CanRun));
+                replacementVm.NotifyCanRun("pick");
             };
 
             searchVm.TextChanged += (_, _) =>
@@ -114,20 +137,25 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             discoveryVm.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(ParameterDiscoveryViewModel.Operation))
-                    replacementVm.NotifyCanRun();
+                    replacementVm.NotifyCanRun("param");
             };
 
             window = new MainWindow();
             window.Bind(selectVm, searchVm, discoveryVm, replacementVm, executionVm, summaryVm);
+            replacementVm.NotifyCanRun("bind");
+            record.Trace("ui", "window", "show", ("cause", "dialog"), ("session", session.State));
             window.ShowDialog();
+            record.Trace("ui", "window", "close", ("session", session.State), ("hasBatch", record.HasBatch));
             return Result.Succeeded;
         }
         finally
         {
+            var from = session.State;
             if (session.State is SessionState.AwaitingReplacementValue && record.HasBatch)
                 session.TransitionTo(SessionState.Completed);
             else if (session.State is not SessionState.Completed and not SessionState.Blocked and not SessionState.Cancelled)
                 session.TransitionTo(SessionState.Cancelled);
+            record.TraceState(from, session, "close");
             record.End(session);
         }
     }
