@@ -4,13 +4,14 @@ Runtime guides for this add-in. Spec-kit requirements live under [specs/001-batc
 
 ## HOW_TO
 
-- [HOW_TO_RUN.md](HOW_TO_RUN.md) — ribbon → command → UI → write
+- [HOW_TO_RUN.md](HOW_TO_RUN.md) — ribbon → command → composition root → coordinator → write
 - [HOW_TO_SELECTION.md](HOW_TO_SELECTION.md) — `SelectionContext`, pre-existing vs pick
-- [HOW_TO_DISCOVER_PARAMETERS.md](HOW_TO_DISCOVER_PARAMETERS.md) — Instance + Type candidates, shared search
-- [HOW_TO_BATCH_UPDATE.md](HOW_TO_BATCH_UPDATE.md) — transaction, skips, dialog suppression
-- [HOW_TO_SESSIONS.md](HOW_TO_SESSIONS.md) — `SessionState`, `.txt` / NDJSON
+- [HOW_TO_DISCOVER_PARAMETERS.md](HOW_TO_DISCOVER_PARAMETERS.md) — instance text-parameter candidates, search
+- [HOW_TO_BATCH_UPDATE.md](HOW_TO_BATCH_UPDATE.md) — transaction, `ParameterWriteDecision`, skips
+- [HOW_TO_SESSIONS.md](HOW_TO_SESSIONS.md) — `WorkflowEvent`, `SessionTraceListener`, `.txt` / NDJSON
 - [HOW_TO_HEXAGONAL_ARCHITECTURE.md](HOW_TO_HEXAGONAL_ARCHITECTURE.md) — ports, adapters, year shells
 - [HOW_TO_MVVM.md](HOW_TO_MVVM.md) — WPF bind map and commands
+- [TESTING.md](TESTING.md) — automated coverage and the manual Revit test matrix
 
 ## Diagrams
 
@@ -28,6 +29,6 @@ Generated Archify HTML under `docs/diagrams/` (gitignored). Open locally:
 ## Spec kit
 
 - [spec.md](specs/001-batch-parameter-update/spec.md)
-- [contracts/ports.md](specs/001-batch-parameter-update/contracts/ports.md)
-- [data-model.md](specs/001-batch-parameter-update/data-model.md)
-- [quickstart.md](specs/001-batch-parameter-update/quickstart.md) — host validation scenarios
+- [plan.md](specs/001-batch-parameter-update/plan.md)
+- [tasks.md](specs/001-batch-parameter-update/tasks.md)
+- [checklists/requirements.md](specs/001-batch-parameter-update/checklists/requirements.md)
