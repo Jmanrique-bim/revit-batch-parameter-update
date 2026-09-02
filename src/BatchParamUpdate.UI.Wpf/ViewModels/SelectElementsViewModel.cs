@@ -60,7 +60,6 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
             ("session", _session?.State),
             ("enabled", IsSelectElementsEnabled));
         _beforePick?.Invoke();
-        _record?.Trace("ui", "window", "hide", ("cause", "pick"));
         SelectionContext? picked;
         try
         {
@@ -69,11 +68,11 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
         finally
         {
             _afterPick?.Invoke();
-            _record?.Trace("ui", "window", "show", ("cause", "pick"));
         }
 
         if (picked is not { IsValid: true })
         {
+            _record?.Trace("ui", "window", "show", ("cause", "pick"));
             _record?.Trace(
                 "ui",
                 "select",
@@ -87,9 +86,14 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
         var from = _session?.State;
         if (_session is { State: SessionState.Started })
             _session.TransitionTo(SessionState.Discovering);
+
+        OnPropertyChanged(nameof(Selection));
+        OnPropertyChanged(nameof(HasNoElementsInScope));
+        OnPropertyChanged(nameof(IsSelectElementsEnabled));
+
         if (_session is not null && from is { } previous)
             _record?.TraceState(previous, _session, "pick");
-
+        _record?.Trace("ui", "window", "show", ("cause", "pick"));
         _record?.Trace(
             "ui",
             "select",
@@ -98,10 +102,6 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
             ("origin", _context.Origin),
             ("count", _context.ElementRefs.Count),
             ("session", _session?.State));
-
-        OnPropertyChanged(nameof(Selection));
-        OnPropertyChanged(nameof(HasNoElementsInScope));
-        OnPropertyChanged(nameof(IsSelectElementsEnabled));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

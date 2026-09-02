@@ -1,6 +1,6 @@
 # HOW_TO: sessions
 
-Purpose: one command invocation = one `Session` state machine plus two sidecar files (human log + JSON Lines metrics). Recording failures must not fail the batch.
+Purpose: one command invocation = one `Session` state machine plus two sidecar files (human log + JSON Lines metrics). Recording failures must not fail the batch — `SessionFileLogger.Write` swallows `IOException` / `UnauthorizedAccessException`.
 
 ## State machine
 
