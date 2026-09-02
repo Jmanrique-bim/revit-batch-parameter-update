@@ -9,17 +9,23 @@ public sealed class RevitParameterWritePort : IParameterWritePort
 {
     private readonly Document _doc;
     private readonly INativeDialogSuppressionPort _dialogs;
+    private readonly IWorksharingStatusPort _worksharing;
 
-    public RevitParameterWritePort(Document doc, INativeDialogSuppressionPort dialogs)
+    public RevitParameterWritePort(
+        Document doc,
+        INativeDialogSuppressionPort dialogs,
+        IWorksharingStatusPort worksharing)
     {
         _doc = doc;
         _dialogs = dialogs;
+        _worksharing = worksharing;
     }
 
-    public BatchExecutionResult? ExecuteInstanceUpdate(
+    public BatchExecutionResult? Execute(
         SelectionContext scope,
         ParameterCandidate targetParameter,
-        string newValue)
+        string newValue,
+        IProgress<BatchProgress> progress)
     {
         using var suppress = _dialogs.SuppressNativeDialogsDuringBatch();
         using var tx = new Transaction(_doc, "Batch Parameter Update");
@@ -27,104 +33,56 @@ public sealed class RevitParameterWritePort : IParameterWritePort
         if (tx.Start() != TransactionStatus.Started)
             return null;
 
+        var key = targetParameter.ResolvedKey;
+        var total = scope.ElementRefs.Count;
         var skips = new List<ElementSkip>();
         var updated = 0;
-        foreach (var eref in scope.ElementRefs)
+        progress.Report(new BatchProgress(0, total));
+        for (var i = 0; i < total; i++)
         {
-            var skip = TryWriteInstance(eref, targetParameter.Name, newValue);
+            var skip = TryWriteInstance(scope.ElementRefs[i], key, newValue);
             if (skip is null)
                 updated++;
             else
                 skips.Add(skip);
+            progress.Report(new BatchProgress(i + 1, total));
         }
 
-        tx.Commit();
-        return BatchExecutionResult.ForInstance(updated, skips);
+        return tx.Commit() == TransactionStatus.Committed
+            ? BatchExecutionResult.Committed(updated, skips)
+            : BatchExecutionResult.Reverted(skips);
     }
 
-    public BatchExecutionResult? ExecuteTypeUpdate(
-        SelectionContext scope,
-        ParameterCandidate targetParameter,
-        string newValue)
-    {
-        using var suppress = _dialogs.SuppressNativeDialogsDuringBatch();
-        using var tx = new Transaction(_doc, "Batch Parameter Update");
-        ApplyFailureHandling(tx);
-        if (tx.Start() != TransactionStatus.Started)
-            return null;
-
-        var types = new Dictionary<string, ResolvedType>(StringComparer.Ordinal);
-        var written = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var eref in scope.ElementRefs)
-        {
-            var element = GetElement(eref);
-            if (element is null)
-                continue;
-
-            var typeId = element.GetTypeId();
-            if (typeId == ElementId.InvalidElementId)
-                continue;
-
-            var type = _doc.GetElement(typeId);
-            if (type is null)
-                continue;
-
-            var key = typeId.ToString();
-            if (types.TryGetValue(key, out var existing))
-            {
-                types[key] = existing with
-                {
-                    SourceElementRefs = existing.SourceElementRefs.Append(eref).ToList()
-                };
-            }
-            else
-            {
-                types[key] = new ResolvedType(key, type.Name, [eref]);
-            }
-
-            if (!written.Contains(key))
-            {
-                var param = FindTextParameter(type, targetParameter.Name);
-                if (param is not null)
-                {
-                    param.Set(newValue);
-                    written.Add(key);
-                }
-            }
-        }
-
-        tx.Commit();
-        return BatchExecutionResult.ForType(types.Values.ToList(), CountElementsOfTypes(types.Keys));
-    }
-
-    private ElementSkip? TryWriteInstance(ElementRef eref, string parameterName, string newValue)
+    private ElementSkip? TryWriteInstance(ElementRef eref, ParameterKey key, string newValue)
     {
         var element = GetElement(eref);
-        if (element is null)
-            return ElementSkip.Create(eref, SkipReason.ParameterMissing);
+        var param = element is null ? null : FindParameter(element, key);
 
-        if (element.GroupId != ElementId.InvalidElementId)
-            return ElementSkip.Create(eref, SkipReason.ModelGroupMember);
+        var state = new ParameterState(
+            ElementFound: element is not null,
+            InModelGroup: element is not null && element.GroupId != ElementId.InvalidElementId,
+            Workshare: _worksharing.GetWorkshareStatus(eref),
+            ParameterFound: param is not null,
+            IsReadOnly: param?.IsReadOnly ?? false,
+            Storage: param is null
+                ? ParameterStorageKind.None
+                : param.StorageType == StorageType.String
+                    ? ParameterStorageKind.Text
+                    : ParameterStorageKind.NonText);
 
-        if (_dialogs.GetWorkshareStatus(eref) == WorkshareStatus.OwnedByOtherUser)
-            return ElementSkip.Create(eref, SkipReason.WorksharingOwnedByOther);
+        var outcome = ParameterWriteDecision.Evaluate(state, () => TrySet(param!, newValue));
+        return outcome is WriteOutcome.Skip skip ? ElementSkip.Create(eref, skip.Reason) : null;
+    }
 
-        var param = FindParameter(element, parameterName);
-        if (param is null)
-            return ElementSkip.Create(eref, SkipReason.ParameterMissing);
-        if (param.IsReadOnly)
-            return ElementSkip.Create(eref, SkipReason.ParameterReadOnly);
-        if (param.StorageType != StorageType.String)
-            return ElementSkip.Create(eref, SkipReason.ParameterNotText);
-
+    private static bool TrySet(Parameter param, string value)
+    {
         try
         {
-            param.Set(newValue);
-            return null;
+            return param.Set(value);
         }
         catch (Autodesk.Revit.Exceptions.InvalidOperationException)
         {
-            return ElementSkip.Create(eref, SkipReason.OtherSuppressedNativeDialog);
+            return false;
         }
     }
 
@@ -137,15 +95,25 @@ public sealed class RevitParameterWritePort : IParameterWritePort
     }
 
     private Element? GetElement(ElementRef eref)
-        => TryParseId(eref.Id, out var id) ? _doc.GetElement(id) : null;
+        => long.TryParse(eref.Id, out var value) ? _doc.GetElement(new ElementId(value)) : null;
 
-    private static Parameter? FindParameter(Element element, string name)
-        => element.LookupParameter(name) ?? FindByDefinitionName(element, name);
-
-    private static Parameter? FindTextParameter(Element element, string name)
+    private static Parameter? FindParameter(Element element, ParameterKey key)
     {
-        var param = FindParameter(element, name);
-        return param is { StorageType: StorageType.String, IsReadOnly: false } ? param : null;
+        if (key.BuiltInId is { } builtIn)
+        {
+            var byBuiltIn = element.get_Parameter((BuiltInParameter)builtIn);
+            if (byBuiltIn is not null)
+                return byBuiltIn;
+        }
+
+        if (key.SharedGuid is { } guid)
+        {
+            var byGuid = element.get_Parameter(guid);
+            if (byGuid is not null)
+                return byGuid;
+        }
+
+        return element.LookupParameter(key.Name) ?? FindByDefinitionName(element, key.Name);
     }
 
     private static Parameter? FindByDefinitionName(Element element, string name)
@@ -157,31 +125,5 @@ public sealed class RevitParameterWritePort : IParameterWritePort
         }
 
         return null;
-    }
-
-    // ponytail: full-model scan for Type-path updated count. Ceiling: large models; upgrade to a category-scoped collector.
-    private int CountElementsOfTypes(IEnumerable<string> typeIds)
-    {
-        var ids = new HashSet<string>(typeIds, StringComparer.Ordinal);
-        var count = 0;
-        foreach (var element in new FilteredElementCollector(_doc).WhereElementIsNotElementType())
-        {
-            if (ids.Contains(element.GetTypeId().ToString()))
-                count++;
-        }
-
-        return count;
-    }
-
-    private static bool TryParseId(string id, out ElementId elementId)
-    {
-        if (long.TryParse(id, out var value))
-        {
-            elementId = new ElementId(value);
-            return true;
-        }
-
-        elementId = ElementId.InvalidElementId;
-        return false;
     }
 }

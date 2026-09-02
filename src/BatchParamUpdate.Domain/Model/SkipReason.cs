@@ -7,5 +7,7 @@ public enum SkipReason
     ParameterNotText,
     WorksharingOwnedByOther,
     ModelGroupMember,
+    ValueRejected,
+    ElementNotFound,
     OtherSuppressedNativeDialog
 }
