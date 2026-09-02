@@ -62,6 +62,24 @@ public sealed class SessionTraceListenerTests
     }
 
     [Fact]
+    public void BatchFinished_WhenRolledBack_DoesNotCountSuccesses()
+    {
+        var (listener, recorder, _) = NewListener();
+        var walls = new ElementRef("1", "Walls");
+        var doors = new ElementRef("2", "Doors");
+        var scope = new SelectionContext([walls, doors], SelectionOrigin.PreExisting);
+        var result = BatchExecutionResult.Reverted([ElementSkip.Create(doors, SkipReason.ParameterMissing)]);
+
+        listener.On(new BatchFinished(result, scope, ElapsedMs: 5));
+
+        var batch = Assert.IsType<BatchResult>(recorder.Records.Single(r => r is BatchResult));
+        Assert.Equal(0, batch.UpdatedCount);
+        Assert.Equal(1, batch.SkippedCounts[nameof(SkipReason.ParameterMissing)]);
+        Assert.Equal(1, batch.CountsByCategory["Doors"].Warning);
+        Assert.False(batch.CountsByCategory.ContainsKey("Walls"));
+    }
+
+    [Fact]
     public void StateChanged_WritesLayeredLine()
     {
         var (listener, _, logger) = NewListener();

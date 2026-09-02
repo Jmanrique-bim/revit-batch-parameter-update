@@ -117,8 +117,8 @@
                      Margin="0,12,0,0"
                      Height="6"
                      Minimum="0"
-                     Maximum="{Binding Total}"
-                     Value="{Binding Done}"
+                     Maximum="{Binding Total, Mode=OneWay}"
+                     Value="{Binding Done, Mode=OneWay}"
                      Foreground="{StaticResource IndigoBrush}"
                      Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
