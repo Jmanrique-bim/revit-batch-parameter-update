@@ -54,6 +54,15 @@ Wraps the transaction:
 
 Writes stay on the Revit API thread. The UI shows an indeterminate progress bar while `Run()` is in the `try` (`IsExecuting`).
 
+## Summary report
+
+`BatchSummaryViewModel.Show(...)` renders the headline and, for the
+Instance path, a searchable/paginated skip grid (20 rows at a time) plus
+an **Export CSV** action backed by `IReportExportPort` — see
+`docs/HOW_TO_MVVM.md` § "Summary report at scale" and
+`docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md` for the port. The Type path still
+has no per-element skip list, so the grid stays hidden for that outcome.
+
 ## Diagram
 
 `docs/diagrams/batch-write.html` (source: `batch-write.sequence.json`).

@@ -18,9 +18,9 @@ Domain and Application never reference `RevitAPI.dll`. The Revit process, filesy
 
 Year shells are the only projects that reference RevitAPI. Ribbon/`App` live in the shared adapter source; they are **not** an eighth port.
 
-## Seven ports
+## Eight ports
 
-Contracts: `docs/specs/001-batch-parameter-update/contracts/ports.md`. Interfaces under `src/BatchParamUpdate.Domain/Ports/`.
+Contracts: `docs/specs/001-batch-parameter-update/contracts/ports.md` (the original 7; `IReportExportPort` is a follow-up, documented there as an addendum). Interfaces under `src/BatchParamUpdate.Domain/Ports/`.
 
 | Port | Production adapter |
 |---|---|
@@ -31,6 +31,7 @@ Contracts: `docs/specs/001-batch-parameter-update/contracts/ports.md`. Interface
 | `ILoggerPort` | `Core.SessionFileLogger` |
 | `ISessionRecorderPort` | `Adapters.Persistence.NdjsonSessionRecorder` |
 | `IInstallerPort` | `Installer.RevitInstallerAdapter` (installer process, not the add-in command) |
+| `IReportExportPort` | `Adapters.Persistence.CsvSkipReportExporter` — writes the batch summary's skip list to CSV under `%TEMP%\juanManriqueHexagon\REPORTS\`, wrapped by `Application.UseCases.ExportSkipReportUseCase`. Backs the summary's "Export CSV" action (UI redesign, Report Panel Variant C). |
 
 ## Dependency rule
 

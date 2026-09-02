@@ -74,7 +74,9 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             var dialogs = new RevitDialogSuppressionPort(uiapp, doc);
             var run = new RunBatchUpdateUseCase(new RevitParameterWritePort(doc, dialogs), logger, record);
             var executionVm = new BatchExecutionViewModel();
-            var summaryVm = new BatchSummaryViewModel(logger.FilePath, metrics.FilePath);
+            var exportPort = new CsvSkipReportExporter();
+            var exportReport = new ExportSkipReportUseCase(exportPort);
+            var summaryVm = new BatchSummaryViewModel(logger.FilePath, metrics.FilePath, runId, exportReport);
 
             MainWindow? window = null;
             var selectVm = new SelectElementsViewModel(

@@ -242,8 +242,48 @@ public interface IInstallerPort
 | `ILoggerPort` | `Core.SessionFileLogger` (via `Adapters.Persistence`) | In-memory fake (`List<string>`) |
 | `ISessionRecorderPort` | `Adapters.Persistence.NdjsonSessionRecorder` | In-memory fake |
 | `IInstallerPort` | `Installer.RevitInstallerAdapter` | In-memory fake |
+| `IReportExportPort` *(addendum, see below)* | `Adapters.Persistence.CsvSkipReportExporter` | In-memory fake |
 
 `Tests.Unit` (xUnit) references only `Domain`/`Application` and the
 right-hand-column fakes — never production adapters nor `RevitAPI.dll`
 (research.md §g). `App` / ribbon / icons are exercised only in the
 manual `quickstart.md` path (SC-014).
+
+---
+
+## Addendum: `IReportExportPort` (UI redesign follow-up)
+
+Added alongside the compact-ribbon UI redesign, not part of the original
+7-port contract above — the batch summary needed a way to hand a skip
+report to someone off the model once a run could skip more elements than
+comfortably fit on screen (Report Panel · Variant C: paginated grid +
+CSV export in `BatchSummaryViewModel`).
+
+**Responsibility**: Export the skips from a batch run as a CSV file the
+user can share outside Revit, without `Domain`/`Application` (or the
+`UI.Wpf` ViewModel) touching the filesystem directly.
+
+```csharp
+public interface IReportExportPort
+{
+    // Writes skips to CSV and returns the path written.
+    string ExportSkips(IReadOnlyList<ElementSkip> skips, string runId);
+}
+```
+
+- **Production adapter**: `Adapters.Persistence.CsvSkipReportExporter` —
+  writes `Element,Category,Reason,Message` rows to
+  `%TEMP%\juanManriqueHexagon\REPORTS\skip-report-{runId}.csv`, next to
+  the session log and NDJSON tracker from the same run.
+- **Application seam**: `Application.UseCases.ExportSkipReportUseCase`
+  wraps the port and returns `null` (no export) when there are no skips,
+  so `BatchSummaryViewModel.ExportCommand` can stay disabled instead of
+  writing an empty file.
+- **Test adapter**: `Tests.Unit.Fakes.FakeReportExportPort` — records
+  calls and returns a configurable path, exercised by
+  `ExportSkipReportUseCaseTests`.
+
+The pagination and search that back `PagedSkips` are presentation-only
+and live entirely in `BatchSummaryViewModel` — no new port for those;
+only the filesystem write crosses a port boundary, consistent with the
+dependency rule above.
