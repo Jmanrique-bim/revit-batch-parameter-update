@@ -1,72 +1,60 @@
 # HOW_TO: batch update
 
-Purpose: write one replacement string onto the chosen parameter, Instance or Type, inside a **single** Revit `Transaction`. Per-element failures become skips; a failed transaction start blocks the whole session.
+Purpose: write one replacement string onto the chosen writable text **instance** parameter of every selected element, inside a **single** Revit `Transaction`. Per-element failures become recorded skips; a failed transaction start or a rolled-back commit blocks the session.
 
 ## Types
 
-- Port: `src/BatchParamUpdate.Domain/Ports/IParameterWritePort.cs`
+- Port: `src/BatchParamUpdate.Domain/Ports/IParameterWritePort.cs` (`Execute`)
 - Adapter: `src/BatchParamUpdate.Adapters.Revit/Writing/RevitParameterWritePort.cs`
-- Dialogs: `src/BatchParamUpdate.Adapters.Revit/DialogSuppression/RevitDialogSuppressionPort.cs`
+- Decision (pure): `src/BatchParamUpdate.Domain/Model/ParameterWriteDecision.cs`
+- Suppression: `src/BatchParamUpdate.Adapters.Revit/DialogSuppression/RevitDialogSuppressionPort.cs`
+- Worksharing: `src/BatchParamUpdate.Adapters.Revit/Worksharing/RevitWorksharingStatusPort.cs`
 - Use case: `src/BatchParamUpdate.Application/UseCases/RunBatchUpdateUseCase.cs`
-- UI: `ReplacementValueViewModel`, `BatchExecutionViewModel`, `BatchSummaryViewModel`
-- Result: `BatchExecutionResult` (`InstanceOutcome` or `TypeOutcome`)
+- Coordinator: `BatchUpdateCoordinator.Run(IProgress<BatchProgress>)`
+- Result: `BatchExecutionResult(UpdatedCount, Skips, RolledBack)`
 
 ## Gate before write
 
-The **Run update** button is enabled only when `ReplacementValueViewModel.CanRun` is true (non-whitespace value and `SessionState.AwaitingReplacementValue`). `Choose` must have returned an operation first; see `docs/HOW_TO_MVVM.md`.
+**Run update** is enabled only when `ReplacementValueViewModel.CanRun` is true: a chosen `WorkflowState.Target`, a non-whitespace value, and `SessionState.AwaitingReplacementValue`.
 
-`RunBatchUpdateUseCase.Execute` requires `operation.HasReplacementValue` (non-whitespace). Otherwise `ErrorCode.EmptyValue` and no write. Session then `Executing`.
+`RunBatchUpdateUseCase.Execute` re-checks `operation.HasReplacementValue` (else `ErrorCode.EmptyValue`, no write). Session then `Executing`.
 
-Binding on `operation.TargetParameter` selects the port method:
+## The write
 
-- `ExecuteInstanceUpdate`
-- `ExecuteTypeUpdate`
+`RevitParameterWritePort.Execute` opens one transaction `"Batch Parameter Update"`. For each `ElementRef` it builds a `ParameterState` and hands it to `ParameterWriteDecision.Evaluate(state, trySet)`. The decision order:
 
-If the port returns `null` (transaction did not start), session → `Blocked`, `ErrorCode.DocumentNotModifiable`. On success the session returns to `AwaitingReplacementValue` so another Run is allowed without closing the window.
-
-## Instance path
-
-One transaction named `"Batch Parameter Update"`. For each `ElementRef` in scope, `TryWriteInstance` either `Parameter.Set` or records an `ElementSkip`:
-
-| SkipReason | When |
+| Check fails | `SkipReason` |
 |---|---|
-| `ParameterMissing` | element gone or name not found |
-| `ModelGroupMember` | `element.GroupId` is set — Instance path does not write grouped instances |
-| `WorksharingOwnedByOther` | `INativeDialogSuppressionPort.GetWorkshareStatus` |
-| `ParameterReadOnly` | parameter exists but read-only |
-| `ParameterNotText` | not `StorageType.String` |
-| `OtherSuppressedNativeDialog` | `InvalidOperationException` from `Set` |
+| element not found (deleted) | `ElementNotFound` |
+| `element.GroupId` set | `ModelGroupMember` |
+| checked out by another user | `WorksharingOwnedByOther` |
+| parameter not found | `ParameterMissing` |
+| parameter read-only | `ParameterReadOnly` |
+| not `StorageType.String` | `ParameterNotText` |
+| `Parameter.Set` returns `false` (silent Revit reject) | `ValueRejected` |
+| otherwise | *updated* |
 
-Successful instance writes increment `UpdatedCount`. Summary lists skip messages.
+The target parameter is resolved by `ParameterCandidate.ResolvedKey` — built-in id, then shared GUID, then name — so the write hits the parameter the user picked, not a namesake.
 
-## Type path
+## Commit outcome
 
-Still one transaction. For each in-scope element, resolve `GetTypeId()`, write the **type object** once per distinct type, then count **all** model instances of those types (`FilteredElementCollector`, not only the selection). Group membership is not a Type-path skip: the write is on the shared type.
+- `tx.Commit()` == `Committed` → `BatchExecutionResult.Committed(updated, skips)`; session back to `AwaitingReplacementValue` (another Run allowed).
+- `tx.Commit()` != `Committed` → `BatchExecutionResult.Reverted(skips)` → `ErrorCode.BatchRolledBack`; session `Blocked`. The summary reads *"Revit rejected the changes. No elements were modified."* — never a success count.
+- `tx.Start()` fails → port returns `null` → `ErrorCode.DocumentNotModifiable`, session `Blocked`.
 
-Summary: `Updated {n} element(s) across {k} type(s).` No per-element skip list on this path.
+## Progress
+
+`Execute` takes `IProgress<BatchProgress>` and reports `(done, total)` per element. `DispatcherPumpProgress` (UI) updates `BatchExecutionViewModel.Done/Total` and drains the WPF queue so the bar moves during the synchronous write. See `HOW_TO_MVVM.md`.
 
 ## Dialog suppression
 
 Wraps the transaction:
 
-1. **Proactive:** worksharing checkout query (no dialog).
-2. **Safety net:** `UIApplication.DialogBoxShowing` → `OverrideResult(Cancel)`; `IFailuresPreprocessor` deletes warning-severity failure messages and continues.
+1. `UIApplication.DialogBoxShowing` → `OverrideResult(Cancel)`.
+2. `IFailuresPreprocessor` deletes warning-severity failure messages and continues.
 
-`SuppressNativeDialogsDuringBatch()` unsubscribes on dispose. Some native dialogs reject `OverrideResult`; the failures preprocessor is the other layer.
-
-Writes stay on the Revit API thread. The UI shows an indeterminate progress bar while `Run()` is in the `try` (`IsExecuting`).
+`SuppressNativeDialogsDuringBatch()` unsubscribes on dispose.
 
 ## Summary report
 
-`BatchSummaryViewModel.Show(...)` updates the in-window headline and, for
-the Instance path, a searchable/paginated skip grid (20 rows at a time)
-plus an **Export CSV** action that calls `IReportExportPort` directly
-(file lands in `%USERPROFILE%\Downloads`) —
-see `docs/HOW_TO_MVVM.md` § "Summary report at scale" and
-`docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md` for the port. There is no second
-summary window. The Type path still has no per-element skip list, so the
-grid stays hidden for that outcome.
-
-## Diagram
-
-`docs/diagrams/batch-write.html` (source: `batch-write.sequence.json`).
+`BatchSummaryViewModel.Show(result, error)` sets the in-window headline and, when there are skips, a searchable/paginated grid (20 rows/page) plus **Export CSV** (`IReportExportPort`, writes to `%USERPROFILE%\Downloads`). One summary, in the same window.

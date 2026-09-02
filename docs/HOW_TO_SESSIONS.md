@@ -4,47 +4,38 @@ Purpose: one command invocation = one `Session` state machine plus two sidecar f
 
 ## State machine
 
-`src/BatchParamUpdate.Domain/Model/Session.cs` + `SessionState.cs`.
-
-Allowed transitions (terminal states accept nothing):
+`src/BatchParamUpdate.Domain/Model/Session.cs` + `SessionState.cs`. Only `BatchUpdateCoordinator` and the use cases it owns call `TransitionTo`.
 
 ```
 Started → Discovering → AwaitingReplacementValue → Executing → AwaitingReplacementValue
-                                                      Executing → Blocked
-AwaitingReplacementValue → Completed   (window close after at least one batch)
+                                                     Executing → Blocked
+AwaitingReplacementValue → Completed   (window close after at least one committed batch)
 any non-terminal → Cancelled
 ```
 
-Illegal transitions throw. Closing the window without a finished batch is `Cancelled`. Closing after at least one successful batch is `Completed` (`BatchParameterUpdateCommand` `finally`).
+Illegal transitions throw. Where they happen:
 
-Where transitions happen:
+- `BatchUpdateCoordinator.Rediscover` (pre-existing selection or manual pick): `Started` → `Discovering`.
+- `DiscoverParametersUseCase.Choose`: `Discovering` → `AwaitingReplacementValue`.
+- `RunBatchUpdateUseCase.Execute`: `AwaitingReplacementValue` → `Executing` → `AwaitingReplacementValue` (committed) or `Blocked` (transaction did not start, or rolled back).
+- `BatchUpdateCoordinator.Complete` (window closed): `AwaitingReplacementValue` → `Completed` if a batch actually ran, else `Cancelled` if not already terminal.
 
-- Pre-existing selection / successful pick: `Started` → `Discovering`
-- `DiscoverParametersUseCase.Choose`: `Started` + valid scope → `Discovering` → `AwaitingReplacementValue`, or `Discovering` → `AwaitingReplacementValue`. Already `AwaitingReplacementValue` stays there (re-pick a parameter). If the session never reaches `AwaitingReplacementValue` (empty scope while `Started`), `Choose` returns null and does not emit an operation.
-- `RunBatchUpdateUseCase`: `AwaitingReplacementValue` → `Executing` → `AwaitingReplacementValue` (success, so another Run is allowed) or `Blocked` (transaction did not start)
-- Command `finally`: `AwaitingReplacementValue` → `Completed` when `RecordSessionUseCase.HasBatch`; otherwise Cancelled if not already terminal
+## Tracing (events, not inline calls)
 
-`End` is idempotent (`_ended`). The use case calls it only on Blocked. The command `finally` always calls it, and is the only place a successful session becomes `Completed`.
+The coordinator raises `WorkflowEvent`s (`SessionStarted`, `SelectionEstablished`, `ParametersDiscovered`, `SearchRan`, `ParameterChosen`, `BatchStarting`, `BatchFinished`, `FlowBlocked`, `StateChanged`, `SessionEnded`). A single `SessionTraceListener` (`src/BatchParamUpdate.Application/Observability/`) is the only subscriber that writes anything:
 
-## Recording
+- `ILoggerPort` → `Core.SessionFileLogger` → `.txt`
+- `ISessionRecorderPort` → `Adapters.Persistence.NdjsonSessionRecorder` → one JSON object per line
 
-`RecordSessionUseCase` (`src/BatchParamUpdate.Application/UseCases/RecordSessionUseCase.cs`) wraps:
+The flow logic itself contains no logging.
 
-- `ILoggerPort` → `Core.SessionFileLogger` (background thread drain to `.txt`)
-- `ISessionRecorderPort` → `NdjsonSessionRecorder` (append one JSON object per line)
+## Files
 
-Identity: `SessionRecord.SessionId` = `revit-{runId}-{documentName}` (`runId` is 8 hex chars). Files on disk use `{runId}-{documentName}` (no `revit-` prefix), under a stable per-user root that does **not** follow `TMP`/`TEMP`:
+Identity: `SessionRecord.SessionId` = `revit-{runId}-{documentName}` (`runId` is 8 hex chars). Files on disk use `{runId}-{documentName}`, under a stable per-user root that does **not** follow `TMP`/`TEMP`:
 
 - `%LOCALAPPDATA%\juanManriqueHexagon\LOGS\{runId}-{documentName}.txt`
 - `%LOCALAPPDATA%\juanManriqueHexagon\TRACKER\{runId}-{documentName}.json`
 
-Paths are built by `Core.SessionStoragePaths`. Tracker content is still JSON Lines (one object per `AppendAllText`).
+Built by `Core.SessionStoragePaths`. NDJSON records: `session_start`, `search_query`, `parameter_selected`, `phase_timing` (`Discovery` / `Execution`), `batch_result` (updated count, skip counts by reason, counts by category and severity), `session_end`.
 
-Events: `SessionStart`, `SearchPerformed`, `ParameterSelected`, `PhaseTiming` (`Discovery` / `Execution`), `BatchResult`, `SessionEnd`.
-
-`SafeRecord` swallows recorder I/O errors and logs `WarningCode.SessionRecordFailed`.
-
-## Diagrams
-
-- `docs/diagrams/session-states.html` (source: `session-states.lifecycle.json`)
-- `docs/diagrams/session-flow.html` (source: `session-flow.workflow.json`)
+`SessionTraceListener` swallows recorder I/O errors and logs `WarningCode.SessionRecordFailed`.

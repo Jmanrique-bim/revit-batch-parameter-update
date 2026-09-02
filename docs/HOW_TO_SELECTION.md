@@ -6,34 +6,31 @@ Purpose: produce a valid `SelectionContext` (one or more `ElementRef`s plus a `S
 
 - Port: `src/BatchParamUpdate.Domain/Ports/IElementSelectionPort.cs`
 - Adapter: `src/BatchParamUpdate.Adapters.Revit/Selection/RevitElementSelectionPort.cs`
-- Use case: `src/BatchParamUpdate.Application/UseCases/EstablishSelectionUseCase.cs`
+- Use case: `src/BatchParamUpdate.Application/UseCases/EstablishSelectionUseCase.cs` (`DetectPreExisting()`)
 - Model: `SelectionContext`, `ElementRef`, `SelectionOrigin` under `src/BatchParamUpdate.Domain/Model/`
+- Coordinator: `BatchUpdateCoordinator.EstablishSelection()` / `.AdoptManualSelection(...)`
 - UI: `src/BatchParamUpdate.UI.Wpf/ViewModels/SelectElementsViewModel.cs`
 
 `ElementRef` stores the Revit id as a **string** and the category name. Domain never sees `ElementId`.
 
 ## Two origins
 
-`SelectionOrigin.PreExisting` — `UIDocument.Selection.GetElementIds()` at command start.
+- `SelectionOrigin.PreExisting` — `UIDocument.Selection.GetElementIds()` at command start.
+- `SelectionOrigin.ManualPick` — `UIDocument.Selection.PickObjects(ObjectType.Element, ...)`. Cancel throws `OperationCanceledException`; the adapter returns `null`.
 
-`SelectionOrigin.ManualPick` — `UIDocument.Selection.PickObjects(ObjectType.Element, ...)`. Cancel throws `OperationCanceledException`; the adapter returns `null`.
+`SelectionContext.IsValid` is `ElementRefs.Count > 0`.
 
-`SelectionContext.IsValid` is `ElementRefs.Count > 0`. An empty list is not an error code at this layer; the UI shows the empty-scope banner and blocks useful work until a pick succeeds.
+## Flow
 
-## Who calls whom
+1. `CompositionRoot` builds the coordinator, then calls `coordinator.EstablishSelection()`.
+2. `EstablishSelectionUseCase.DetectPreExisting()` returns whatever the port reports.
+   - Valid → `SelectionResult.Established`; the coordinator sets `WorkflowState.Scope`, runs discovery, moves the session to `Discovering`.
+   - Empty → `SelectionResult.NeedsManualPick`; the window still opens (User Story 2) with **Select Elements** enabled.
+3. `SelectElementsViewModel.PickManually` hides the host window, calls `IElementSelectionPort.PromptManualSelection`, shows it again, then `coordinator.AdoptManualSelection(picked)` — which sets the scope, re-runs discovery, and raises `Changed` so `MainViewModel` refreshes the child view-models.
 
-`BatchParameterUpdateCommand` does **not** always run `EstablishSelectionUseCase` for a pick:
-
-1. It always asks `GetPreExistingSelection()`.
-2. If that context is valid, it runs `EstablishSelectionUseCase.Execute(session)` (same pre-existing read; session → `Discovering`) and discovers immediately.
-3. If empty, it builds `new SelectionContext([], SelectionOrigin.ManualPick)` and leaves pick to the UI.
-
-`SelectElementsViewModel.IsSelectElementsEnabled` is true only when `Origin == ManualPick`. Pre-existing scope greys out **Select Elements**. After a successful pick, origin stays `ManualPick`, so the user can pick again; `PropertyChanged` on `Selection` retriggers `DiscoverParametersUseCase.Discover` in the command, then `Retarget` then `ReplaceSets`.
-
-Before `PickObjects`, the command hides `MainWindow` (`beforePick`); after, it shows it again. Revit cannot pick through a modal WPF window. That Hide/Show path also breaks WPF `CommandManager` requery, which is why **Run update** binds `CanRun` and raises `CanExecuteChanged` explicitly (`docs/HOW_TO_MVVM.md`).
+`SelectElementsViewModel.IsSelectElementsEnabled` is true only when the launch had no pre-existing selection. Trying to advance (choose a parameter, or Run) while the scope is still empty raises `ErrorCode.EmptySelection`, shown in the error banner.
 
 ## Constraints
 
-- `PickObjects` must run on the Revit API thread (it does: modal `ShowDialog` on `Execute`).
-- Cancelling the pick leaves the previous context unchanged (still invalid if never picked).
-- `EstablishSelectionUseCase` also supports a direct manual prompt when pre-existing is empty; the hosted command currently uses the ViewModel path instead for that case.
+- `PickObjects` must run on the Revit API thread (it does: modal `ShowDialog` on `Execute`). Revit cannot pick through a modal WPF window, hence the hide/show.
+- The hide/show breaks WPF `CommandManager` requery, so **Run update** raises `CanExecuteChanged` explicitly — see `HOW_TO_MVVM.md`.

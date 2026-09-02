@@ -1,6 +1,6 @@
 # Batch Parameter Update
 
-Revit add-in that batch-writes one writable **text** parameter across a selection. Instance-bound and Type-bound candidates are discovered from the same scope, shown together, and filtered by a single search. The chosen binding decides the write path.
+Revit add-in that batch-writes one writable **text instance** parameter across a selection. Candidates are discovered from the current selection, listed in one searchable panel, and the chosen parameter is written on every selected element inside one reversible transaction.
 
 **Author:** Juan Pablo Manrique
 
@@ -13,9 +13,11 @@ Supported hosts: **Autodesk Revit 2025 and 2026** only. The installer never offe
 Hexagonal (ports and adapters) inside the Revit process, plus MVVM for the WPF window.
 
 1. `App` (`IExternalApplication`) registers a ribbon panel **Batch Parameter Update** and a **Batch Update** button.
-2. `BatchParameterUpdateCommand` is the composition root: it wires adapters, use cases, session recording, and the WPF window, then `ShowDialog()`.
-3. Application use cases talk only to Domain ports. Year shells (`Adapters.Revit.20XX`) compile the shared Revit adapter source against that year's `RevitAPI.dll`.
-4. Unit tests in `tests/BatchParamUpdate.Tests.Unit` exercise Domain/Application with in-memory fakes — no RevitAPI.
+2. `BatchParameterUpdateCommand` is thin: it opens the session log, calls `CompositionRoot.Build(...)`, shows the window, and calls `BatchUpdateCoordinator.Complete()` on close.
+3. `CompositionRoot` (the one place that sees UI + persistence + Revit together) wires the ports, use cases, the `BatchUpdateCoordinator`, and the view-models.
+4. `BatchUpdateCoordinator` (Application) owns the flow: it is the only component that advances the `Session` and the only source of `WorkflowEvent`s. A single `SessionTraceListener` turns those events into the `.txt` log and NDJSON metrics — the flow logic itself contains no logging.
+5. Application use cases talk only to Domain ports. Year shells (`Adapters.Revit.20XX`) compile the shared Revit adapter source against that year's `RevitAPI.dll`.
+6. Unit tests in `tests/BatchParamUpdate.Tests.Unit` exercise Domain/Application with in-memory fakes — no RevitAPI. A `LayerDependencyTests` check fails if Domain/Application ever gain an outward dependency.
 
 See [docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md](docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md) and [docs/HOW_TO_RUN.md](docs/HOW_TO_RUN.md).
 
@@ -24,8 +26,8 @@ See [docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md](docs/HOW_TO_HEXAGONAL_ARCHITECTURE.m
 ```
 BatchParamUpdate.sln
 src/
-  BatchParamUpdate.Domain/                 # model, 7 ports, error catalog (no RevitAPI)
-  BatchParamUpdate.Application/            # use cases
+  BatchParamUpdate.Domain/                 # model, ports, decision logic, error catalog (no RevitAPI)
+  BatchParamUpdate.Application/            # use cases, coordinator, observability
   BatchParamUpdate.Core/                   # SessionFileLogger, runId, timers (no RevitAPI)
   BatchParamUpdate.Adapters.Revit/         # shared adapter source (App, command, ports)
   BatchParamUpdate.Adapters.Revit.2025/    # thin year shell + .addin (net8.0-windows)
@@ -56,7 +58,7 @@ Prerequisites: Velopack CLI (`vpk`) on PATH. `Installer.exe` must call `Velopack
 .\pack.ps1 -Version 1.0.0
 ```
 
-That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. The installer UI lists detected 2025/2026 installs and copies the matching assembly plus `.addin` (`Application` class = `App`).
+That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. The installer UI lists detected 2025/2026 installs and copies the matching assembly plus `.addin` (`Application` class = `App`) into the **per-user** add-ins folder `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights required.
 
 Session artifacts:
 
@@ -66,5 +68,5 @@ Session artifacts:
 ## Documentation
 
 - [docs/README.md](docs/README.md) — HOW_TO index and diagrams
-- Spec kit (requirements, ports, data model): [docs/specs/001-batch-parameter-update/](docs/specs/001-batch-parameter-update/)
-- Host validation scenarios: [docs/specs/001-batch-parameter-update/quickstart.md](docs/specs/001-batch-parameter-update/quickstart.md)
+- [docs/TESTING.md](docs/TESTING.md) — automated coverage and the manual Revit test matrix
+- Spec kit: [docs/specs/001-batch-parameter-update/](docs/specs/001-batch-parameter-update/) (`spec.md`, `plan.md`, `tasks.md`, `checklists/`)
