@@ -13,7 +13,9 @@ public sealed class RevitInstallerAdapter : IInstallerPort
     public bool IsAddinInstalled(int revitYear)
     {
         EnsureSupported(revitYear);
-        return File.Exists(Path.Combine(AddinsFolder(revitYear), $"BatchParamUpdate.Adapters.Revit.{revitYear}.addin"));
+        var manifest = $"BatchParamUpdate.Adapters.Revit.{revitYear}.addin";
+        return File.Exists(Path.Combine(AddinsFolder(revitYear), manifest))
+            || File.Exists(Path.Combine(RevitAddinPaths.LegacyAllUsersAddinsFolder(revitYear), manifest));
     }
 
     public void Install(int revitYear)
@@ -41,6 +43,8 @@ public sealed class RevitInstallerAdapter : IInstallerPort
                 File.Copy(file, target, overwrite: true);
             }
         }
+
+        RemoveLegacyAllUsers(revitYear);
     }
 
     public void Update(int revitYear) => Install(revitYear);
@@ -55,9 +59,35 @@ public sealed class RevitInstallerAdapter : IInstallerPort
             File.Delete(addin);
         if (Directory.Exists(payload))
             Directory.Delete(payload, recursive: true);
+
+        RemoveLegacyAllUsers(revitYear);
     }
 
     internal static string AddinsFolder(int year) => RevitAddinPaths.PerUserAddinsFolder(year);
+
+    /// <summary>
+    /// Removes a manifest + payload left in the all-users (%ProgramData%) location by an older
+    /// installer version, so Revit does not load two manifests and register the command twice.
+    /// </summary>
+    // ponytail: best-effort. If the process lacks rights to %ProgramData%, the stale copy stays
+    // and Revit may double-load — no worse than before this cleanup existed. Elevate the
+    // installer if that case matters.
+    private static void RemoveLegacyAllUsers(int year)
+    {
+        try
+        {
+            var legacy = RevitAddinPaths.LegacyAllUsersAddinsFolder(year);
+            var addin = Path.Combine(legacy, $"BatchParamUpdate.Adapters.Revit.{year}.addin");
+            var payload = Path.Combine(legacy, "BatchParamUpdate");
+            if (File.Exists(addin))
+                File.Delete(addin);
+            if (Directory.Exists(payload))
+                Directory.Delete(payload, recursive: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+        }
+    }
 
     private static void EnsureSupported(int year)
     {

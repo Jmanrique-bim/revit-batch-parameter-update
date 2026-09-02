@@ -20,4 +20,16 @@ public sealed class RevitAddinPathsTests
         Assert.DoesNotContain(programData, path, StringComparison.OrdinalIgnoreCase);
         Assert.EndsWith(Path.Combine("Autodesk", "Revit", "Addins", year.ToString()), path);
     }
+
+    [Theory]
+    [InlineData(2025)]
+    [InlineData(2026)]
+    public void LegacyAllUsersAddinsFolder_IsUnderProgramData(int year)
+    {
+        var path = RevitAddinPaths.LegacyAllUsersAddinsFolder(year);
+        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+        Assert.StartsWith(programData, path, StringComparison.OrdinalIgnoreCase);
+        Assert.EndsWith(Path.Combine("Autodesk", "Revit", "Addins", year.ToString()), path);
+    }
 }

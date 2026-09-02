@@ -25,6 +25,23 @@ public sealed class ParameterCandidateSetTests
     }
 
     [Fact]
+    public void KeepsNamesakesWithDifferentKeysApart()
+    {
+        var wall = new ElementRef("1", "Walls");
+        var door = new ElementRef("2", "Doors");
+        var guid = Guid.NewGuid();
+        var set = new ParameterCandidateSet(
+        [
+            new("Comments", [wall], [], new ParameterKey(42, null, "Comments")),
+            new("Comments", [door], [], new ParameterKey(null, guid, "Comments"))
+        ]);
+
+        Assert.Equal(2, set.Candidates.Count);
+        Assert.Contains(set.Candidates, c => c.ResolvedKey.BuiltInId == 42);
+        Assert.Contains(set.Candidates, c => c.ResolvedKey.SharedGuid == guid);
+    }
+
+    [Fact]
     public void Deduplication_IsCaseInsensitiveOnName()
     {
         var a = new ElementRef("1", "Walls");

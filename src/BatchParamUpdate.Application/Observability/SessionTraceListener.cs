@@ -104,8 +104,11 @@ public sealed class SessionTraceListener : IWorkflowObserver
             Add(byCategory, skip.Element.CategoryName, warning: 1);
         }
 
-        foreach (var element in scope.ElementRefs.Where(e => !skippedIds.Contains(e.Id)))
-            Add(byCategory, element.CategoryName, success: 1);
+        // On rollback nothing was committed (UpdatedCount == 0), so non-skipped elements are not
+        // successes — leave them out of the category counts instead of recording phantom "ok"s.
+        if (!result.RolledBack)
+            foreach (var element in scope.ElementRefs.Where(e => !skippedIds.Contains(e.Id)))
+                Add(byCategory, element.CategoryName, success: 1);
 
         return new BatchResult(
             _identity.SessionId, DateTimeOffset.UtcNow, result.UpdatedCount, skipped, byCategory);

@@ -97,15 +97,18 @@ public sealed class BatchSummaryViewModel : INotifyPropertyChanged
     {
         ExportStatusMessage = null;
 
-        if (error is { } code)
+        if (result is { RolledBack: true })
+        {
+            // A revert still carries per-element skips — keep them so the grid and CSV export
+            // work. Run() always passes LastError (BatchRolledBack after a revert), so this
+            // branch has to win over the generic error branch below.
+            Headline = ErrorWarningCatalog.Message(ErrorCode.BatchRolledBack);
+            _allSkips = result.Skips;
+        }
+        else if (error is { } code)
         {
             Headline = ErrorWarningCatalog.Message(code);
             _allSkips = [];
-        }
-        else if (result is { RolledBack: true })
-        {
-            Headline = ErrorWarningCatalog.Message(ErrorCode.BatchRolledBack);
-            _allSkips = result.Skips;
         }
         else if (result is not null)
         {

@@ -16,10 +16,14 @@ public sealed record ParameterCandidate(
 
     internal static IReadOnlyList<ParameterCandidate> Deduplicate(IEnumerable<ParameterCandidate> candidates)
     {
-        var map = new Dictionary<string, ParameterCandidate>(StringComparer.OrdinalIgnoreCase);
+        // Key on identity, not just display name: two elements can carry different parameters
+        // that share a name (a built-in vs. a project/shared param). Merging those would make
+        // the write target the first one's built-in id / GUID on every element.
+        var map = new Dictionary<(string Name, int? BuiltInId, Guid? SharedGuid), ParameterCandidate>();
         foreach (var candidate in candidates)
         {
-            if (map.TryGetValue(candidate.Name, out var existing))
+            var key = (candidate.Name.ToLowerInvariant(), candidate.ResolvedKey.BuiltInId, candidate.ResolvedKey.SharedGuid);
+            if (map.TryGetValue(key, out var existing))
             {
                 var merged = existing.SourceElementRefs
                     .Concat(candidate.SourceElementRefs)
@@ -29,7 +33,7 @@ public sealed record ParameterCandidate(
                     .Concat(candidate.ObservedValues)
                     .Distinct(StringComparer.Ordinal)
                     .ToList();
-                map[candidate.Name] = existing with
+                map[key] = existing with
                 {
                     SourceElementRefs = merged,
                     ObservedValues = values
@@ -37,7 +41,7 @@ public sealed record ParameterCandidate(
             }
             else
             {
-                map[candidate.Name] = candidate;
+                map[key] = candidate;
             }
         }
 
