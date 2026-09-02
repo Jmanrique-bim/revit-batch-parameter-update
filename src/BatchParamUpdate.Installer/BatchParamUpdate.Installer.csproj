@@ -5,8 +5,16 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>BatchParamUpdate.Installer</RootNamespace>
     <AssemblyName>Installer</AssemblyName>
+    <StartupObject>BatchParamUpdate.Installer.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
   </ItemGroup>
 </Project>

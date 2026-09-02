@@ -51,11 +51,13 @@ A **Debug** build of a year project copies the `.addin` and payload to `%AppData
 
 Installer (from `src/BatchParamUpdate.Installer/`):
 
+Prerequisites: Velopack CLI (`vpk`) on PATH, and a **.NET 10 SDK** (Revit 2027 is `net10.0-windows`; do not retarget it). `Installer.exe` must call `VelopackApp.Build().Run()` before any WPF window (`Program.Main` + Velopack 1.2.0) or `vpk pack` refuses the binary. `pack.ps1` fails if `dotnet` / `vpk` return non-zero, and if the .NET 10 SDK is missing when building 2027.
+
 ```powershell
 .\pack.ps1 -Version 1.0.0
 ```
 
-That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. The installer UI lists detected 2025/2026/2027 installs and copies the matching assembly plus `.addin` (`Application` class = `App`).
+That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. Install the .NET 10 SDK from https://aka.ms/dotnet/download if the 2027 build is rejected. The installer UI lists detected 2025/2026/2027 installs and copies the matching assembly plus `.addin` (`Application` class = `App`).
 
 Session artifacts:
 

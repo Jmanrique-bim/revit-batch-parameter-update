@@ -287,6 +287,6 @@ The original technical assessment brief estimated 4-6 hours of effort for the ba
 
 - A licensed, installed copy of Autodesk Revit — version 2025, 2026, or 2027 — on the evaluator's machine.
 - A Windows OS environment with a writable system Temp directory (required for session logs and metrics persistence).
-- .NET runtime/SDK compatible with the targeted Revit API versions, for building and running the add-in (per-year adapter projects: `net8.0-windows` for 2025/2026, `net10.0-windows` for 2027).
+- .NET runtime/SDK compatible with the targeted Revit API versions, for building and running the add-in (per-year adapter projects: `net8.0-windows` for 2025/2026, `net10.0-windows` for 2027). Packing Revit 2027 via `src/BatchParamUpdate.Installer/pack.ps1` requires a .NET 10 SDK (https://aka.ms/dotnet/download); the 2027 TFM stays `net10.0-windows`.
 - Visual Studio, for building the solution from source.
-- Velopack tooling, for producing the installer package and its install/uninstall/update UI from the built solution.
+- Velopack tooling (`vpk`) plus the Velopack NuGet package on the installer host, which must call `VelopackApp.Build().Run()` in `Program.Main` before any WPF window, for producing the installer package and its install/uninstall/update UI from the built solution.

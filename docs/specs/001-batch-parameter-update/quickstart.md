@@ -34,7 +34,9 @@ Success Criteria (SC) in `spec.md` that it validates.
 3. **Build + installer**: `BatchParamUpdate.sln` built Release (year adapter
    projects `Adapters.Revit.2025` / `.2026` / `.2027` compile in the same
    Debug/Release pass; see `plan.md` → Project Structure), and Velopack
-   installer generated (`vpk pack`, see `research.md` §h).
+   installer generated (`pack.ps1` → `vpk pack`, see `research.md` §h).
+   Packaging 2027 needs a .NET 10 SDK (`net10.0-windows`). The installer
+   host must call `VelopackApp.Build().Run()` before any WPF window.
 
 ## Installation
 
