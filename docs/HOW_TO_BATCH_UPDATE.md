@@ -15,7 +15,7 @@ Purpose: write one replacement string onto the chosen writable text **instance**
 
 ## Gate before write
 
-**Run update** is enabled only when `ReplacementValueViewModel.CanRun` is true: a chosen `WorkflowState.Target`, a non-whitespace value, and `SessionState.AwaitingReplacementValue`.
+**Run update** is enabled only when `ReplacementValueViewModel.CanRun` is true: a chosen `WorkflowState.Target`, a non-whitespace value, `SessionState.AwaitingReplacementValue`, and no batch already executing.
 
 `RunBatchUpdateUseCase.Execute` re-checks `operation.HasReplacementValue` (else `ErrorCode.EmptyValue`, no write). Session then `Executing`.
 
@@ -39,7 +39,7 @@ The target parameter is resolved by `ParameterCandidate.ResolvedKey` — built-i
 ## Commit outcome
 
 - `tx.Commit()` == `Committed` → `BatchExecutionResult.Committed(updated, skips)`; session back to `AwaitingReplacementValue` (another Run allowed).
-- `tx.Commit()` != `Committed` → `BatchExecutionResult.Reverted(skips)` → `ErrorCode.BatchRolledBack`; session `Blocked`. The summary reads *"Revit rejected the changes. No elements were modified."* — never a success count.
+- `tx.Commit()` != `Committed` → `BatchExecutionResult.Reverted(skips)` → `ErrorCode.BatchRolledBack`; session `Blocked`. The summary reads *"Revit rejected the changes. No elements were modified."* — never a success count — but the per-element skips the run collected are still shown and exportable, and `SessionTraceListener.Aggregate` records no `ok` counts for the run.
 - `tx.Start()` fails → port returns `null` → `ErrorCode.DocumentNotModifiable`, session `Blocked`.
 
 ## Progress
