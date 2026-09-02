@@ -124,7 +124,6 @@ public sealed class BatchSummaryViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(HasSkips));
         OnPropertyChanged(nameof(SearchText));
         ApplyFilter(resetPage: true);
-        CommandManager.InvalidateRequerySuggested();
     }
 
     private void ApplyFilter(bool resetPage)
@@ -168,7 +167,14 @@ public sealed class BatchSummaryViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(PageSummary));
         OnPropertyChanged(nameof(CanGoNext));
         OnPropertyChanged(nameof(CanGoPrevious));
-        CommandManager.InvalidateRequerySuggested();
+        RefreshCommands();
+    }
+
+    private void RefreshCommands()
+    {
+        (NextPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (PreviousPageCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        (ExportCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
     private void Export()
