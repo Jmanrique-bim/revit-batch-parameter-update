@@ -31,10 +31,10 @@ ViewModels implement `INotifyPropertyChanged`. They call Application use cases a
 
 ## Command flow
 
-1. `SelectElementsCommand` → hide window → `PromptManualSelection` → show window → raise `Selection`.
+1. `SelectElementsCommand` → hide window → `PromptManualSelection` → show window → raise `Selection`. The command `Retarget`s discovery **before** `ReplaceSets`, so a list auto-select cannot `Choose` against the empty launch scope.
 2. Search `Text` → `TextChanged` → discovery VM refreshes filtered lists; command records search metrics.
-3. Selecting a parameter in either list → `DiscoverParametersUseCase.Choose` → `Operation` / `CurrentValueSummary`. The current-values `Expander` on the replacement panel starts collapsed. `CommandManager.InvalidateRequerySuggested` so **Run update** can enable.
-4. `RunCommand` `CanExecute` requires non-whitespace value **and** `SessionState.AwaitingReplacementValue`.
+3. Selecting a parameter in either list → `DiscoverParametersUseCase.Choose` → `Operation` / `CurrentValueSummary` only when the session reaches `AwaitingReplacementValue`. Otherwise `Choose` returns null (no current-value line). The current-values `Expander` on the replacement panel starts collapsed. The composition root calls `ReplacementValueViewModel.NotifyCanRun` (same piecewise wiring as `Retarget`, not VM-to-VM).
+4. **Run update** binds `IsEnabled` to `CanRun` (same pattern as **Select Elements**). `CanRun` / `RunCommand.CanExecute` require non-whitespace value **and** `SessionState.AwaitingReplacementValue`. `RelayCommand.RaiseCanExecuteChanged` covers the Revit host: `CommandManager` does not requery after `Hide` + `PickObjects` + `Show`.
 5. `Run()` sets `IsExecuting`, calls `RunBatchUpdateUseCase.Execute` (session returns to `AwaitingReplacementValue` on success), then `BatchSummaryViewModel.Show`.
 
 Type-parameter warning is a bound `Border` (`ShowWideBlastWarning`) wrapping a `TextBlock`, not a modal dialog. `TextBlock` has no `BorderBrush`; the chrome lives on the `Border`.

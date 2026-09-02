@@ -109,6 +109,7 @@
               <Button Grid.Column="2"
                       Content="Run update"
                       Command="{Binding RunCommand}"
+                      IsEnabled="{Binding CanRun}"
                       Style="{StaticResource PrimaryButtonStyle}"
                       Margin="10,0,0,0" />
             </Grid>

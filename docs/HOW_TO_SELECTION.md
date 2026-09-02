@@ -28,9 +28,9 @@ Purpose: produce a valid `SelectionContext` (one or more `ElementRef`s plus a `S
 2. If that context is valid, it runs `EstablishSelectionUseCase.Execute(session)` (same pre-existing read; session → `Discovering`) and discovers immediately.
 3. If empty, it builds `new SelectionContext([], SelectionOrigin.ManualPick)` and leaves pick to the UI.
 
-`SelectElementsViewModel.IsSelectElementsEnabled` is true only when `Origin == ManualPick`. Pre-existing scope greys out **Select Elements**. After a successful pick, origin stays `ManualPick`, so the user can pick again; `PropertyChanged` on `Selection` retriggers `DiscoverParametersUseCase.Discover` in the command.
+`SelectElementsViewModel.IsSelectElementsEnabled` is true only when `Origin == ManualPick`. Pre-existing scope greys out **Select Elements**. After a successful pick, origin stays `ManualPick`, so the user can pick again; `PropertyChanged` on `Selection` retriggers `DiscoverParametersUseCase.Discover` in the command, then `Retarget` then `ReplaceSets`.
 
-Before `PickObjects`, the command hides `MainWindow` (`beforePick`); after, it shows it again. Revit cannot pick through a modal WPF window.
+Before `PickObjects`, the command hides `MainWindow` (`beforePick`); after, it shows it again. Revit cannot pick through a modal WPF window. That Hide/Show path also breaks WPF `CommandManager` requery, which is why **Run update** binds `CanRun` and raises `CanExecuteChanged` explicitly (`docs/HOW_TO_MVVM.md`).
 
 ## Constraints
 

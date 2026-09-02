@@ -19,7 +19,20 @@ internal sealed class RelayCommand : ICommand
 
     public event EventHandler? CanExecuteChanged
     {
-        add => CommandManager.RequerySuggested += value;
-        remove => CommandManager.RequerySuggested -= value;
+        add
+        {
+            CommandManager.RequerySuggested += value;
+            _canExecuteChanged += value;
+        }
+        remove
+        {
+            CommandManager.RequerySuggested -= value;
+            _canExecuteChanged -= value;
+        }
     }
+
+    // ponytail: CommandManager dies after Revit PickObjects; Raise is the host workaround.
+    public void RaiseCanExecuteChanged() => _canExecuteChanged?.Invoke(this, EventArgs.Empty);
+
+    private event EventHandler? _canExecuteChanged;
 }

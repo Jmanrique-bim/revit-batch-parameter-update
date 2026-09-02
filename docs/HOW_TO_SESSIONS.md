@@ -20,7 +20,7 @@ Illegal transitions throw. Closing the window without a finished batch is `Cance
 Where transitions happen:
 
 - Pre-existing selection / successful pick: `Started` → `Discovering`
-- `DiscoverParametersUseCase.Choose`: `Discovering` → `AwaitingReplacementValue`
+- `DiscoverParametersUseCase.Choose`: `Started` + valid scope → `Discovering` → `AwaitingReplacementValue`, or `Discovering` → `AwaitingReplacementValue`. Already `AwaitingReplacementValue` stays there (re-pick a parameter). If the session never reaches `AwaitingReplacementValue` (empty scope while `Started`), `Choose` returns null and does not emit an operation.
 - `RunBatchUpdateUseCase`: `AwaitingReplacementValue` → `Executing` → `AwaitingReplacementValue` (success, so another Run is allowed) or `Blocked` (transaction did not start)
 - Command `finally`: `AwaitingReplacementValue` → `Completed` when `RecordSessionUseCase.HasBatch`; otherwise Cancelled if not already terminal
 
