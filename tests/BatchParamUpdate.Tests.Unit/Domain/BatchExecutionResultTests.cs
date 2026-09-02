@@ -6,18 +6,26 @@ namespace BatchParamUpdate.Tests.Unit.Domain;
 public sealed class BatchExecutionResultTests
 {
     [Fact]
-    public void InstanceOutcome_AndTypeOutcome_AreMutuallyExclusiveByPath()
+    public void Committed_CarriesUpdatedCountAndSkips_AndIsNotRolledBack()
     {
-        var instance = BatchExecutionResult.ForInstance(3, []);
-        Assert.Equal(ParameterBinding.Instance, instance.Path);
-        Assert.NotNull(instance.InstanceOutcome);
-        Assert.Null(instance.TypeOutcome);
+        var skip = ElementSkip.Create(new ElementRef("2", "Doors"), SkipReason.ParameterMissing);
 
-        var type = BatchExecutionResult.ForType(
-            [new ResolvedType("t1", "Basic Wall", [])],
-            10);
-        Assert.Equal(ParameterBinding.Type, type.Path);
-        Assert.NotNull(type.TypeOutcome);
-        Assert.Null(type.InstanceOutcome);
+        var result = BatchExecutionResult.Committed(3, [skip]);
+
+        Assert.Equal(3, result.UpdatedCount);
+        Assert.Single(result.Skips);
+        Assert.False(result.RolledBack);
+    }
+
+    [Fact]
+    public void Reverted_ReportsZeroUpdated_AndIsRolledBack()
+    {
+        var skip = ElementSkip.Create(new ElementRef("2", "Doors"), SkipReason.ParameterMissing);
+
+        var result = BatchExecutionResult.Reverted([skip]);
+
+        Assert.Equal(0, result.UpdatedCount);
+        Assert.Single(result.Skips);
+        Assert.True(result.RolledBack);
     }
 }

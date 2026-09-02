@@ -9,14 +9,12 @@ public sealed record SearchPerformed(
     string SessionId,
     DateTimeOffset TimestampUtc,
     string QueryText,
-    IReadOnlyList<string> MatchedInInstanceSet,
-    IReadOnlyList<string> MatchedInTypeSet) : MetricsRecord(SessionId, TimestampUtc);
+    IReadOnlyList<string> Matched) : MetricsRecord(SessionId, TimestampUtc);
 
 public sealed record ParameterSelected(
     string SessionId,
     DateTimeOffset TimestampUtc,
-    string Name,
-    ParameterBinding Binding) : MetricsRecord(SessionId, TimestampUtc);
+    string Name) : MetricsRecord(SessionId, TimestampUtc);
 
 public sealed record PhaseTiming(
     string SessionId,
@@ -29,7 +27,6 @@ public sealed record OutcomeCounts(int Success, int Warning, int Error);
 public sealed record BatchResult(
     string SessionId,
     DateTimeOffset TimestampUtc,
-    ParameterBinding Path,
     int UpdatedCount,
     IReadOnlyDictionary<string, int> SkippedCounts,
     IReadOnlyDictionary<string, OutcomeCounts> CountsByCategory) : MetricsRecord(SessionId, TimestampUtc);

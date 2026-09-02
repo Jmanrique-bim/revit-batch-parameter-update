@@ -6,5 +6,6 @@ public enum ErrorCode
     NoParameterSelected,
     EmptyValue,
     DocumentNotModifiable,
-    NoActiveDocument
+    NoActiveDocument,
+    BatchRolledBack
 }

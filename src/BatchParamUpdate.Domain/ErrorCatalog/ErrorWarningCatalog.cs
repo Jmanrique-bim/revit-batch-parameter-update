@@ -13,6 +13,7 @@ public static class ErrorWarningCatalog
         ErrorCode.EmptyValue => "ERR-500-EMPTY-VALUE",
         ErrorCode.DocumentNotModifiable => "ERR-500-DOCUMENT-NOT-MODIFIABLE",
         ErrorCode.NoActiveDocument => "ERR-500-NO-ACTIVE-DOCUMENT",
+        ErrorCode.BatchRolledBack => "ERR-500-BATCH-ROLLED-BACK",
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, null)
     };
 
@@ -23,6 +24,8 @@ public static class ErrorWarningCatalog
         WarningCode.ParamNotText => "WARN-400-PARAM-NOT-TEXT",
         WarningCode.WorkshareOwned => "WARN-400-WORKSHARE-OWNED",
         WarningCode.ModelGroupMember => "WARN-400-MODEL-GROUP-MEMBER",
+        WarningCode.ValueRejected => "WARN-400-VALUE-REJECTED",
+        WarningCode.ElementNotFound => "WARN-400-ELEMENT-NOT-FOUND",
         WarningCode.NoSearchMatch => "WARN-400-NO-SEARCH-MATCH",
         WarningCode.SessionRecordFailed => "WARN-400-SESSION-RECORD-FAILED",
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, null)
@@ -33,13 +36,15 @@ public static class ErrorWarningCatalog
         ErrorCode.EmptySelection =>
             "No elements are selected. Select one or more elements before continuing.",
         ErrorCode.NoParameterSelected =>
-            "Choose a parameter from Dialog Box 1 or Dialog Box 2 before continuing.",
+            "Choose a parameter before continuing.",
         ErrorCode.EmptyValue =>
             "Enter a parameter and a replacement value before running the update.",
         ErrorCode.DocumentNotModifiable =>
             "The model cannot be modified right now. No changes were made.",
         ErrorCode.NoActiveDocument =>
             "Open a model in Revit before running this tool.",
+        ErrorCode.BatchRolledBack =>
+            "Revit rejected the changes. No elements were modified.",
         _ => throw new ArgumentOutOfRangeException(nameof(code), code, null)
     };
 
@@ -55,6 +60,10 @@ public static class ErrorWarningCatalog
             "This element is currently being edited by another user and was skipped.",
         WarningCode.ModelGroupMember =>
             "This element belongs to a group and cannot be batch-updated here. Edit it from within the group in Revit, or ungroup it, and try again.",
+        WarningCode.ValueRejected =>
+            "Revit did not accept the new value for this element.",
+        WarningCode.ElementNotFound =>
+            "This element no longer exists in the model.",
         WarningCode.NoSearchMatch =>
             "No parameters match your search.",
         WarningCode.SessionRecordFailed =>

@@ -102,16 +102,15 @@ public sealed class BatchSummaryViewModel : INotifyPropertyChanged
             Headline = ErrorWarningCatalog.Message(code);
             _allSkips = [];
         }
-        else if (result?.InstanceOutcome is { } instance)
+        else if (result is { RolledBack: true })
         {
-            Headline = $"Updated {instance.UpdatedCount} element(s). Skipped {instance.Skips.Count}.";
-            _allSkips = instance.Skips;
+            Headline = ErrorWarningCatalog.Message(ErrorCode.BatchRolledBack);
+            _allSkips = result.Skips;
         }
-        else if (result?.TypeOutcome is { } type)
+        else if (result is not null)
         {
-            Headline =
-                $"Updated {type.TotalElementsUpdated} element(s) across {type.AffectedTypes.Count} type(s).";
-            _allSkips = [];
+            Headline = $"Updated {result.UpdatedCount} element(s). Skipped {result.Skips.Count}.";
+            _allSkips = result.Skips;
         }
         else
         {

@@ -38,7 +38,7 @@ public sealed class ErrorWarningCatalogTests
             "No elements are selected. Select one or more elements before continuing.",
             ErrorWarningCatalog.Message(ErrorCode.EmptySelection));
         Assert.Equal(
-            "Choose a parameter from Dialog Box 1 or Dialog Box 2 before continuing.",
+            "Choose a parameter before continuing.",
             ErrorWarningCatalog.Message(ErrorCode.NoParameterSelected));
         Assert.Equal(
             "Enter a parameter and a replacement value before running the update.",

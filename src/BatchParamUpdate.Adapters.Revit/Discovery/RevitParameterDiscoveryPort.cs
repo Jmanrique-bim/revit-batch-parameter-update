@@ -10,22 +10,18 @@ public sealed class RevitParameterDiscoveryPort : IParameterDiscoveryPort
 
     public RevitParameterDiscoveryPort(Document doc) => _doc = doc;
 
-    public InstanceParameterCandidateSet DiscoverInstanceCandidates(SelectionContext scope)
-        => new(Collect(scope, fromType: false));
+    public ParameterCandidateSet Discover(SelectionContext scope)
+        => new(Collect(scope));
 
-    public TypeParameterCandidateSet DiscoverTypeCandidates(SelectionContext scope)
-        => new(Collect(scope, fromType: true));
-
-    private IEnumerable<ParameterCandidate> Collect(SelectionContext scope, bool fromType)
+    private IEnumerable<ParameterCandidate> Collect(SelectionContext scope)
     {
-        var binding = fromType ? ParameterBinding.Type : ParameterBinding.Instance;
         foreach (var eref in scope.ElementRefs)
         {
-            var host = ResolveHost(eref, fromType);
-            if (host is null)
+            var element = ResolveElement(eref);
+            if (element is null)
                 continue;
 
-            foreach (Parameter parameter in host.Parameters)
+            foreach (Parameter parameter in element.Parameters)
             {
                 if (parameter.StorageType != StorageType.String || parameter.IsReadOnly)
                     continue;
@@ -36,26 +32,23 @@ public sealed class RevitParameterDiscoveryPort : IParameterDiscoveryPort
 
                 yield return new ParameterCandidate(
                     name,
-                    binding,
                     [eref],
-                    [parameter.AsString() ?? ""]);
+                    [parameter.AsString() ?? ""],
+                    KeyFor(parameter, name));
             }
         }
     }
 
-    private Element? ResolveHost(ElementRef eref, bool fromType)
+    private Element? ResolveElement(ElementRef eref)
+        => long.TryParse(eref.Id, out var idValue) ? _doc.GetElement(new ElementId(idValue)) : null;
+
+    private static ParameterKey KeyFor(Parameter parameter, string name)
     {
-        if (!long.TryParse(eref.Id, out var idValue))
-            return null;
-
-        var element = _doc.GetElement(new ElementId(idValue));
-        if (element is null)
-            return null;
-
-        if (!fromType)
-            return element;
-
-        var typeId = element.GetTypeId();
-        return typeId == ElementId.InvalidElementId ? null : _doc.GetElement(typeId);
+        int? builtIn = parameter.Definition is InternalDefinition def
+                       && def.BuiltInParameter != BuiltInParameter.INVALID
+            ? (int)def.BuiltInParameter
+            : null;
+        Guid? sharedGuid = parameter.IsShared ? parameter.GUID : null;
+        return new ParameterKey(builtIn, sharedGuid, name);
     }
 }

@@ -57,13 +57,7 @@ public sealed class RevitInstallerAdapter : IInstallerPort
             Directory.Delete(payload, recursive: true);
     }
 
-    internal static string AddinsFolder(int year)
-        => Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "Autodesk",
-            "Revit",
-            "Addins",
-            year.ToString());
+    internal static string AddinsFolder(int year) => RevitAddinPaths.PerUserAddinsFolder(year);
 
     private static void EnsureSupported(int year)
     {

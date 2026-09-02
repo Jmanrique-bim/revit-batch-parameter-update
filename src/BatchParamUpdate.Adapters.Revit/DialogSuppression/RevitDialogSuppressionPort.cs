@@ -1,7 +1,6 @@
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Events;
-using BatchParamUpdate.Domain.Model;
 using BatchParamUpdate.Domain.Ports;
 
 namespace BatchParamUpdate.Adapters.Revit.DialogSuppression;
@@ -9,26 +8,8 @@ namespace BatchParamUpdate.Adapters.Revit.DialogSuppression;
 public sealed class RevitDialogSuppressionPort : INativeDialogSuppressionPort
 {
     private readonly UIApplication _uiapp;
-    private readonly Document _doc;
 
-    public RevitDialogSuppressionPort(UIApplication uiapp, Document doc)
-    {
-        _uiapp = uiapp;
-        _doc = doc;
-    }
-
-    public WorkshareStatus GetWorkshareStatus(ElementRef element)
-    {
-        if (!_doc.IsWorkshared || !TryParseId(element.Id, out var id))
-            return WorkshareStatus.NotWorkshared;
-
-        return WorksharingUtils.GetCheckoutStatus(_doc, id) switch
-        {
-            CheckoutStatus.OwnedByCurrentUser => WorkshareStatus.OwnedByCurrentUser,
-            CheckoutStatus.OwnedByOtherUser => WorkshareStatus.OwnedByOtherUser,
-            _ => WorkshareStatus.NotWorkshared
-        };
-    }
+    public RevitDialogSuppressionPort(UIApplication uiapp) => _uiapp = uiapp;
 
     public IDisposable SuppressNativeDialogsDuringBatch()
     {
@@ -49,18 +30,6 @@ public sealed class RevitDialogSuppressionPort : INativeDialogSuppressionPort
         {
             // ponytail: some native dialogs reject OverrideResult; the FailuresPreprocessor is the other layer.
         }
-    }
-
-    private static bool TryParseId(string id, out ElementId elementId)
-    {
-        if (long.TryParse(id, out var value))
-        {
-            elementId = new ElementId(value);
-            return true;
-        }
-
-        elementId = ElementId.InvalidElementId;
-        return false;
     }
 
     private sealed class SuppressionScope : IDisposable

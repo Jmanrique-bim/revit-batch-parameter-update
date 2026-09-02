@@ -6,9 +6,9 @@ namespace BatchParamUpdate.UI.Wpf.ViewModels;
 
 public sealed class SharedSearchViewModel : INotifyPropertyChanged
 {
-    public SharedSearchViewModel(SharedSearchQuery query) => Query = query;
+    public SharedSearchViewModel(ParameterSearch query) => Query = query;
 
-    public SharedSearchQuery Query { get; private set; }
+    public ParameterSearch Query { get; private set; }
 
     public string Text
     {
@@ -23,9 +23,9 @@ public sealed class SharedSearchViewModel : INotifyPropertyChanged
         }
     }
 
-    public void ReplaceSets(InstanceParameterCandidateSet instance, TypeParameterCandidateSet type)
+    public void ReplaceSet(ParameterCandidateSet set)
     {
-        Query = new SharedSearchQuery(instance, type, Query.Text);
+        Query = new ParameterSearch(set, Query.Text);
         OnPropertyChanged(nameof(Text));
         TextChanged?.Invoke(this, EventArgs.Empty);
     }

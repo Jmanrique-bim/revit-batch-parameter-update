@@ -7,6 +7,8 @@ public enum WarningCode
     ParamNotText,
     WorkshareOwned,
     ModelGroupMember,
+    ValueRejected,
+    ElementNotFound,
     NoSearchMatch,
     SessionRecordFailed
 }

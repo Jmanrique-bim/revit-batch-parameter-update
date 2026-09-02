@@ -4,8 +4,8 @@
     Shared visual language for the Batch Parameter Update window — the
     "Under the moonlight" palette plus white as the dominant surface, so
     color is reserved for primary actions and the selected/current state
-    rather than spread across the whole UI. Merged by MainWindow.xaml,
-    InstanceParameterDialog.xaml and TypeParameterDialog.xaml.
+    rather than spread across the whole UI. Merged by MainWindow.xaml and
+    InstanceParameterDialog.xaml.
   -->
   <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 

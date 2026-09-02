@@ -7,39 +7,39 @@ public sealed class FakeParameterWritePort : IParameterWritePort
 {
     public bool BlockGlobally { get; set; }
 
+    public bool Revert { get; set; }
+
     public Dictionary<string, SkipReason> SkipsByElementId { get; } = new();
 
-    public BatchExecutionResult? TypeUpdateResult { get; set; }
+    public int ExecuteCalls { get; private set; }
 
-    public int InstanceUpdateCalls { get; private set; }
+    public List<BatchProgress> ProgressReports { get; } = [];
 
-    public int TypeUpdateCalls { get; private set; }
-
-    public BatchExecutionResult? ExecuteInstanceUpdate(
+    public BatchExecutionResult? Execute(
         SelectionContext scope,
         ParameterCandidate targetParameter,
-        string newValue)
+        string newValue,
+        IProgress<BatchProgress> progress)
     {
-        InstanceUpdateCalls++;
+        ExecuteCalls++;
         if (BlockGlobally)
             return null;
+
+        var total = scope.ElementRefs.Count;
+        progress.Report(new BatchProgress(0, total));
+        for (var i = 0; i < total; i++)
+        {
+            ProgressReports.Add(new BatchProgress(i + 1, total));
+            progress.Report(new BatchProgress(i + 1, total));
+        }
 
         var skips = scope.ElementRefs
             .Where(e => SkipsByElementId.ContainsKey(e.Id))
             .Select(e => ElementSkip.Create(e, SkipsByElementId[e.Id]))
             .ToList();
-        return BatchExecutionResult.ForInstance(scope.ElementRefs.Count - skips.Count, skips);
-    }
 
-    public BatchExecutionResult? ExecuteTypeUpdate(
-        SelectionContext scope,
-        ParameterCandidate targetParameter,
-        string newValue)
-    {
-        TypeUpdateCalls++;
-        if (BlockGlobally)
-            return null;
-
-        return TypeUpdateResult ?? BatchExecutionResult.ForType([], 0);
+        return Revert
+            ? BatchExecutionResult.Reverted(skips)
+            : BatchExecutionResult.Committed(total - skips.Count, skips);
     }
 }

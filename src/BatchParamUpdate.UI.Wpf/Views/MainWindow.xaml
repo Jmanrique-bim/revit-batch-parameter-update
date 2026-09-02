@@ -4,15 +4,16 @@
         xmlns:views="clr-namespace:BatchParamUpdate.UI.Wpf.Views"
         Title="Batch Parameter Update"
         Height="760"
-        Width="880"
+        Width="620"
         Background="White">
   <!--
     Layout: compact ribbon (Option 3 from the UI redesign). Selection and
-    search live in a top ribbon; the run action stays single-sourced next
-    to the replacement value (no duplicate "Run update" button). The
-    summary's skip report is Variant C: search box + paginated grid +
-    CSV export, backed by BatchSummaryViewModel.PagedSkips so a run that
-    skips hundreds of elements never renders them all at once.
+    search live in a top ribbon; a single full-width panel lists the
+    discovered writable text instance parameters; the run action stays
+    single-sourced next to the replacement value. The summary's skip
+    report is Variant C: search box + paginated grid + CSV export, backed
+    by BatchSummaryViewModel.PagedSkips so a run that skips hundreds of
+    elements never renders them all at once.
     See docs/HOW_TO_MVVM.md and docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md.
   -->
   <Window.Resources>
@@ -59,21 +60,13 @@
                    Margin="0,0,0,12"
                    Visibility="{Binding HasNoElementsInScope, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
-        <Grid>
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="14" />
-            <ColumnDefinition Width="*" />
-          </Grid.ColumnDefinitions>
-          <views:InstanceParameterDialog x:Name="InstanceDialog" Grid.Column="0" />
-          <views:TypeParameterDialog x:Name="TypeDialog" Grid.Column="2" />
-        </Grid>
+        <views:InstanceParameterDialog x:Name="ParameterPanel" MinHeight="260" />
 
         <TextBlock x:Name="AdvanceErrorBanner"
                    Margin="0,12,0,0"
                    Foreground="{StaticResource ErrorBrush}"
                    TextWrapping="Wrap"
-                   Text="{Binding AdvanceErrorMessage}" />
+                   Text="{Binding ErrorMessage}" />
 
         <!-- Replacement value + the single Run update action. -->
         <Border x:Name="ReplacementPanel"
@@ -123,8 +116,10 @@
         <ProgressBar x:Name="ExecutionProgress"
                      Margin="0,12,0,0"
                      Height="6"
+                     Minimum="0"
+                     Maximum="{Binding Total}"
+                     Value="{Binding Done}"
                      Foreground="{StaticResource IndigoBrush}"
-                     IsIndeterminate="True"
                      Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <!-- Summary — Report Panel Variant C: search + paginated grid + CSV export. -->

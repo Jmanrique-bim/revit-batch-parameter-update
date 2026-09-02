@@ -11,7 +11,7 @@
   <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="6" Background="White">
     <DockPanel>
       <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" Padding="10,7">
-        <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Instance parameters" />
+        <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Parameters" />
       </Border>
       <TextBlock DockPanel.Dock="Bottom"
                  Margin="10,8"

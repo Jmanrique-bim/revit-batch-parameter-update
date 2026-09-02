@@ -22,6 +22,8 @@ public sealed record ElementSkip(
         SkipReason.ParameterNotText => WarningCode.ParamNotText,
         SkipReason.WorksharingOwnedByOther => WarningCode.WorkshareOwned,
         SkipReason.ModelGroupMember => WarningCode.ModelGroupMember,
+        SkipReason.ValueRejected => WarningCode.ValueRejected,
+        SkipReason.ElementNotFound => WarningCode.ElementNotFound,
         SkipReason.OtherSuppressedNativeDialog => WarningCode.WorkshareOwned,
         _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, null)
     };

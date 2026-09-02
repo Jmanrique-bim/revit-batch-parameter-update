@@ -10,24 +10,9 @@ public sealed class EstablishSelectionUseCase
     public EstablishSelectionUseCase(IElementSelectionPort selection)
         => _selection = selection;
 
-    public SelectionContext Execute(Session session)
-    {
-        ArgumentNullException.ThrowIfNull(session);
-
-        var context = _selection.GetPreExistingSelection();
-        if (context.IsValid)
-        {
-            session.TransitionTo(SessionState.Discovering);
-            return context;
-        }
-
-        var manual = _selection.PromptManualSelection();
-        if (manual is { IsValid: true })
-        {
-            session.TransitionTo(SessionState.Discovering);
-            return manual;
-        }
-
-        return new SelectionContext([], SelectionOrigin.ManualPick);
-    }
+    /// <summary>
+    /// The selection present in the active document when the command launched. May be empty —
+    /// the caller then opens the window with manual pick enabled (User Story 2).
+    /// </summary>
+    public SelectionContext DetectPreExisting() => _selection.GetPreExistingSelection();
 }
