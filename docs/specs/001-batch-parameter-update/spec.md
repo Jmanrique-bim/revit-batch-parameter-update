@@ -17,7 +17,7 @@ The body of this document is the spec-kit history. The shipped add-in differs fr
 - **Two new per-element skip reasons**: `ValueRejected` (`Parameter.Set` returned `false`) and `ElementNotFound` (element deleted after selection). A rolled-back transaction now surfaces `ERR-500-BATCH-ROLLED-BACK` instead of a phantom success count.
 - **Architecture**: the flow is owned by one `BatchUpdateCoordinator`; tracing is decoupled — the coordinator raises `WorkflowEvent`s and a single `SessionTraceListener` writes the `.txt` log and NDJSON. `INativeDialogSuppressionPort` was split into suppression + `IWorksharingStatusPort`. A `LayerDependencyTests` check enforces the hexagon.
 - **Installer** installs per-user (`%APPDATA%\Autodesk\Revit\Addins\<year>`), no admin rights.
-- **Progress** is a real determinate bar; see `docs/HOW_TO_MVVM.md` for the modal-thread caveat.
+- **Progress** is a real determinate bar; see `docs/HOW_TO_MVVM.md` for how progress is marshalled from the API thread.
 - **Supported hosts: Revit 2025 and 2026 only.** Revit 2027 / .NET 10 is not targeted.
 
 ---

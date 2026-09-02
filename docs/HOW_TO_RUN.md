@@ -1,6 +1,6 @@
 # HOW_TO: run the add-in
 
-End-to-end path from Revit load to batch write. All of this runs on the **Revit API thread**: `IExternalCommand.Execute` opens a modal WPF `ShowDialog()`, so UI commands and model writes share that thread.
+End-to-end path from Revit load to batch write. `IExternalCommand.Execute` opens a **modeless** WPF window with `Show()` and returns. UI commands, `PickObjects` and read-only re-discovery run on the Revit main/UI thread; the batch write is marshalled to a valid API context through `RevitApiEventBridge` (an `IExternalEventHandler`), because a modeless add-in cannot open a `Transaction` directly.
 
 ## Launch
 
@@ -16,7 +16,7 @@ The command fails immediately (no window) if there is no `ActiveUIDocument` (`Er
 
 1. Allocates `runId` (`RunIdGenerator`) and a sanitized document name, opens `SessionFileLogger`.
 2. Calls `CompositionRoot.Build(...)` (`src/BatchParamUpdate.Adapters.Revit/Composition/CompositionRoot.cs`) — the single place that references UI + persistence + Revit. It builds the ports, use cases, the `BatchUpdateCoordinator`, the `SessionTraceListener`, and the view-models, and runs `EstablishSelection()`.
-3. Shows `MainWindow`; in `finally` calls `BatchUpdateCoordinator.Complete()`, which resolves the terminal `SessionState` and raises `SessionEnded`.
+3. Creates the `RevitApiEventBridge` (in `CompositionRoot.Build`), sets the window `Owner` to the Revit main window, and calls `Show()`. A static `_open` guard makes a second ribbon click refocus the existing window. The `Closed` handler calls `BatchUpdateCoordinator.Complete()` (resolves the terminal `SessionState`, raises `SessionEnded`) and disposes the bridge + logger.
 
 `BatchUpdateCoordinator` (`src/BatchParamUpdate.Application/Workflow/`) is the only component that advances the `Session` and the only source of `WorkflowEvent`s. `SessionTraceListener` is the only subscriber that writes the log and NDJSON.
 

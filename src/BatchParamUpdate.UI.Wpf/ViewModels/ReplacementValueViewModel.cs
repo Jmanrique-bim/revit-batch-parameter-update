@@ -12,15 +12,20 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
     private readonly BatchUpdateCoordinator _coordinator;
     private readonly BatchExecutionViewModel _execution;
     private readonly BatchSummaryViewModel _summary;
+    private readonly Func<Action, Task> _runOnRevit;
 
     public ReplacementValueViewModel(
         BatchUpdateCoordinator coordinator,
         BatchExecutionViewModel execution,
-        BatchSummaryViewModel summary)
+        BatchSummaryViewModel summary,
+        Func<Action, Task>? runOnRevit = null)
     {
         _coordinator = coordinator;
         _execution = execution;
         _summary = summary;
+        // The Revit host swaps in an ExternalEvent bridge (modeless window can't open a
+        // Transaction directly). Default runs inline for non-Revit hosts and tests.
+        _runOnRevit = runOnRevit ?? (work => { work(); return Task.CompletedTask; });
         RunCommand = new RelayCommand(Run, () => CanRun);
     }
 
@@ -45,7 +50,8 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
     public bool CanRun =>
         _coordinator.State.Target is not null
         && !string.IsNullOrWhiteSpace(NewValue)
-        && _coordinator.Step == SessionState.AwaitingReplacementValue;
+        && _coordinator.Step == SessionState.AwaitingReplacementValue
+        && !_execution.IsExecuting;
 
     public ICommand RunCommand { get; }
 
@@ -57,13 +63,20 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         (RunCommand as RelayCommand)?.RaiseCanExecuteChanged();
     }
 
-    private void Run()
+    private async void Run()
     {
+        if (_execution.IsExecuting)
+            return;
+
         _execution.IsExecuting = true;
+        NotifyCanRun();
         try
         {
-            var progress = new DispatcherPumpProgress(_execution.Report);
-            var result = _coordinator.Run(progress);
+            // Progress<T> marshals Report back to this (UI) thread; the write loop calls it
+            // from the Revit API thread inside the bridge.
+            var progress = new Progress<BatchProgress>(_execution.Report);
+            BatchExecutionResult? result = null;
+            await _runOnRevit(() => result = _coordinator.Run(progress));
             _summary.Show(result, _coordinator.LastError);
         }
         finally

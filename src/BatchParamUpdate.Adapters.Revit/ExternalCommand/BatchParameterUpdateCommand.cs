@@ -1,3 +1,4 @@
+using System.Windows.Interop;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -12,8 +13,17 @@ namespace BatchParamUpdate.Adapters.Revit.ExternalCommand;
 [Regeneration(RegenerationOption.Manual)]
 public sealed class BatchParameterUpdateCommand : IExternalCommand
 {
+    // The window is modeless, so a second ribbon click while it is open just refocuses it.
+    private static MainWindow? _open;
+
     public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
     {
+        if (_open is not null)
+        {
+            _open.Activate();
+            return Result.Succeeded;
+        }
+
         var uiapp = commandData.Application;
         var uidoc = uiapp.ActiveUIDocument;
         if (uidoc is null)
@@ -33,7 +43,8 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
 
         var runId = RunIdGenerator.NewRunId();
         var documentName = DocumentNameSanitizer.Sanitize(doc.Title);
-        using var logger = new SessionFileLogger(runId, documentName);
+        // Lifetime is the window's now, not this method's — disposed in the Closed handler.
+        var logger = new SessionFileLogger(runId, documentName);
 
         MainWindow? window = null;
         var composition = CompositionRoot.Build(
@@ -45,16 +56,25 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             hideHost: () => window?.Hide(),
             showHost: () => window?.Show());
 
-        try
+        window = new MainWindow();
+        new WindowInteropHelper(window).Owner = uiapp.MainWindowHandle;
+        window.Bind(composition.View);
+        window.Closed += (_, _) =>
         {
-            window = new MainWindow();
-            window.Bind(composition.View);
-            window.ShowDialog();
-            return Result.Succeeded;
-        }
-        finally
-        {
-            composition.Coordinator.Complete();
-        }
+            try
+            {
+                composition.Coordinator.Complete();
+            }
+            finally
+            {
+                composition.RevitBridge.Dispose();
+                logger.Dispose();
+                _open = null;
+            }
+        };
+
+        _open = window;
+        window.Show();
+        return Result.Succeeded;
     }
 }

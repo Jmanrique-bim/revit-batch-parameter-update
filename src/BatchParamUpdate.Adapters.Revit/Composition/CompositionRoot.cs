@@ -3,6 +3,7 @@ using Autodesk.Revit.UI;
 using BatchParamUpdate.Adapters.Persistence;
 using BatchParamUpdate.Adapters.Revit.DialogSuppression;
 using BatchParamUpdate.Adapters.Revit.Discovery;
+using BatchParamUpdate.Adapters.Revit.ExternalEvents;
 using BatchParamUpdate.Adapters.Revit.Selection;
 using BatchParamUpdate.Adapters.Revit.Worksharing;
 using BatchParamUpdate.Adapters.Revit.Writing;
@@ -20,7 +21,10 @@ namespace BatchParamUpdate.Adapters.Revit.Composition;
 /// The one place that is allowed to see UI, persistence and Revit together. It wires the ports,
 /// use cases, coordinator and view-models; the external command only drives the result.
 /// </summary>
-public sealed record CompositionResult(MainViewModel View, BatchUpdateCoordinator Coordinator);
+public sealed record CompositionResult(
+    MainViewModel View,
+    BatchUpdateCoordinator Coordinator,
+    RevitApiEventBridge RevitBridge);
 
 public static class CompositionRoot
 {
@@ -42,6 +46,7 @@ public static class CompositionRoot
         var dialogs = new RevitDialogSuppressionPort(uiapp);
         var worksharing = new RevitWorksharingStatusPort(doc);
         var writePort = new RevitParameterWritePort(doc, dialogs, worksharing);
+        var revitBridge = new RevitApiEventBridge();
 
         var session = new Session();
         var state = new WorkflowState();
@@ -62,9 +67,9 @@ public static class CompositionRoot
         var summary = new BatchSummaryViewModel(new CsvSkipReportExporter(), runId);
         var select = new SelectElementsViewModel(selectionPort, coordinator, manualPickAllowed, hideHost, showHost);
         var discovery = new ParameterDiscoveryViewModel(coordinator, search);
-        var replacement = new ReplacementValueViewModel(coordinator, execution, summary);
+        var replacement = new ReplacementValueViewModel(coordinator, execution, summary, revitBridge.RunAsync);
 
         var view = new MainViewModel(coordinator, select, search, discovery, replacement, execution, summary);
-        return new CompositionResult(view, coordinator);
+        return new CompositionResult(view, coordinator, revitBridge);
     }
 }

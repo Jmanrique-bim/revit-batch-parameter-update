@@ -44,7 +44,7 @@ The target parameter is resolved by `ParameterCandidate.ResolvedKey` — built-i
 
 ## Progress
 
-`Execute` takes `IProgress<BatchProgress>` and reports `(done, total)` per element. `DispatcherPumpProgress` (UI) updates `BatchExecutionViewModel.Done/Total` and drains the WPF queue so the bar moves during the synchronous write. See `HOW_TO_MVVM.md`.
+`Execute` takes `IProgress<BatchProgress>` and reports `(done, total)` per element. The UI passes `System.Progress<BatchProgress>`; the write runs on the Revit API thread via `RevitApiEventBridge` and `Progress<T>` marshals each report back to the UI thread to update `BatchExecutionViewModel.Done/Total`. See `HOW_TO_MVVM.md`.
 
 ## Dialog suppression
 
