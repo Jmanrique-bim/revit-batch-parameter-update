@@ -68,13 +68,14 @@ public static class CompositionRoot
         var select = new SelectElementsViewModel(selectionPort, coordinator, manualPickAllowed, hideHost, showHost);
         var discovery = new ParameterDiscoveryViewModel(coordinator, search);
 
-        // Modeless: the window outlives Execute, so the write can fire after `doc` was closed or
-        // another document became active. Refuse it in the API context rather than opening a
-        // Transaction on a stale/inactive document.
+        // Modeless: the window outlives Execute, so the write can fire after `doc` was closed.
+        // `IsValidObject` is false once Revit has disposed the document — refuse rather than let
+        // `new Transaction(doc, ...)` throw. (Don't compare against ActiveUIDocument.Document:
+        // Revit hands back a fresh managed wrapper each call, so reference identity is unreliable.)
         Task RunOnRevit(Action work) => revitBridge.RunAsync(() =>
         {
-            if (uiapp.ActiveUIDocument?.Document is not { } active || !ReferenceEquals(active, doc))
-                throw new InvalidOperationException("The target document is no longer active in Revit.");
+            if (!doc.IsValidObject)
+                throw new InvalidOperationException("The target document is no longer open in Revit.");
             work();
         });
 
