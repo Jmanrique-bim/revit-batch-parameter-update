@@ -2,26 +2,21 @@ namespace BatchParamUpdate.Domain.Model;
 
 public sealed class ReplacementOperation
 {
-    public ReplacementOperation(
-        ParameterCandidate targetParameter,
-        string newValue,
-        ExecutionScope executionScope)
+    public ReplacementOperation(ParameterCandidate targetParameter, string newValue, SelectionContext scope)
     {
         TargetParameter = targetParameter;
         NewValue = newValue;
-        ExecutionScope = executionScope;
+        Scope = scope;
     }
 
     public ParameterCandidate TargetParameter { get; }
 
     public string NewValue { get; }
 
-    public bool RequiresWideBlastRadiusWarning => TargetParameter.Binding == ParameterBinding.Type;
-
-    public ExecutionScope ExecutionScope { get; }
+    public SelectionContext Scope { get; }
 
     public bool HasReplacementValue => !string.IsNullOrWhiteSpace(NewValue);
 
     public ReplacementOperation WithNewValue(string newValue)
-        => new(TargetParameter, newValue, ExecutionScope);
+        => new(TargetParameter, newValue, Scope);
 }

@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using BatchParamUpdate.Application.UseCases;
+using BatchParamUpdate.Application.Workflow;
 using BatchParamUpdate.Domain.Model;
 using BatchParamUpdate.Domain.Ports;
 
@@ -9,57 +9,40 @@ namespace BatchParamUpdate.UI.Wpf.ViewModels;
 
 public sealed class SelectElementsViewModel : INotifyPropertyChanged
 {
-    private readonly IElementSelectionPort? _selection;
-    private readonly Session? _session;
-    private readonly RecordSessionUseCase? _record;
-    private readonly Action? _beforePick;
-    private readonly Action? _afterPick;
-    private SelectionContext _context;
-
-    public SelectElementsViewModel(SelectionContext selection)
-        : this(selection, selectionPort: null, session: null)
-    {
-    }
+    private readonly IElementSelectionPort _selection;
+    private readonly BatchUpdateCoordinator _coordinator;
+    private readonly bool _manualPickAllowed;
+    private readonly Action? _hideHost;
+    private readonly Action? _showHost;
 
     public SelectElementsViewModel(
-        SelectionContext selection,
-        IElementSelectionPort? selectionPort,
-        Session? session,
-        Action? beforePick = null,
-        Action? afterPick = null,
-        RecordSessionUseCase? record = null)
+        IElementSelectionPort selection,
+        BatchUpdateCoordinator coordinator,
+        bool manualPickAllowed,
+        Action? hideHost = null,
+        Action? showHost = null)
     {
-        _context = selection;
-        _selection = selectionPort;
-        _session = session;
-        _record = record;
-        _beforePick = beforePick;
-        _afterPick = afterPick;
+        _selection = selection;
+        _coordinator = coordinator;
+        _manualPickAllowed = manualPickAllowed;
+        _hideHost = hideHost;
+        _showHost = showHost;
         SelectElementsCommand = new RelayCommand(PickManually, () => IsSelectElementsEnabled);
     }
 
     public ICommand SelectElementsCommand { get; }
 
-    public bool IsSelectElementsEnabled => _context.Origin == SelectionOrigin.ManualPick;
+    public bool IsSelectElementsEnabled => _manualPickAllowed;
 
-    public bool HasNoElementsInScope => !_context.IsValid;
-
-    public SelectionContext Selection => _context;
+    public bool HasNoElementsInScope => !_coordinator.State.HasScope;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    public void NotifyScopeChanged() => OnPropertyChanged(nameof(HasNoElementsInScope));
+
     private void PickManually()
     {
-        if (_selection is null)
-            return;
-
-        _record?.Trace(
-            "ui",
-            "select",
-            "pick.start",
-            ("session", _session?.State),
-            ("enabled", IsSelectElementsEnabled));
-        _beforePick?.Invoke();
+        _hideHost?.Invoke();
         SelectionContext? picked;
         try
         {
@@ -67,41 +50,11 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
         }
         finally
         {
-            _afterPick?.Invoke();
+            _showHost?.Invoke();
         }
 
-        if (picked is not { IsValid: true })
-        {
-            _record?.Trace("ui", "window", "show", ("cause", "pick"));
-            _record?.Trace(
-                "ui",
-                "select",
-                "pick.end",
-                ("valid", false),
-                ("session", _session?.State));
-            return;
-        }
-
-        _context = picked;
-        var from = _session?.State;
-        if (_session is { State: SessionState.Started })
-            _session.TransitionTo(SessionState.Discovering);
-
-        OnPropertyChanged(nameof(Selection));
-        OnPropertyChanged(nameof(HasNoElementsInScope));
-        OnPropertyChanged(nameof(IsSelectElementsEnabled));
-
-        if (_session is not null && from is { } previous)
-            _record?.TraceState(previous, _session, "pick");
-        _record?.Trace("ui", "window", "show", ("cause", "pick"));
-        _record?.Trace(
-            "ui",
-            "select",
-            "pick.end",
-            ("valid", true),
-            ("origin", _context.Origin),
-            ("count", _context.ElementRefs.Count),
-            ("session", _session?.State));
+        if (picked is { IsValid: true })
+            _coordinator.AdoptManualSelection(picked);
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

@@ -18,10 +18,9 @@ public sealed class RunBatchUpdateUseCaseTests
         ],
         SelectionOrigin.PreExisting);
 
-    private static readonly ParameterCandidate InstanceParam = new(
-        "Comments",
-        ParameterBinding.Instance,
-        Scope.ElementRefs);
+    private static readonly ParameterCandidate InstanceParam = new("Comments", Scope.ElementRefs);
+
+    private static readonly IProgress<BatchProgress> NoProgress = new Progress<BatchProgress>();
 
     [Fact]
     public void Execute_RejectsBlankNewValue_WithEmptyValueError()
@@ -29,18 +28,18 @@ public sealed class RunBatchUpdateUseCaseTests
         var write = new FakeParameterWritePort();
         var useCase = new RunBatchUpdateUseCase(write);
         var session = AwaitingSession();
-        var operation = new ReplacementOperation(InstanceParam, "   ", new InstanceScope(Scope));
+        var operation = new ReplacementOperation(InstanceParam, "   ", Scope);
 
-        var result = useCase.Execute(session, operation, Scope);
+        var result = useCase.Execute(session, operation, Scope, NoProgress);
 
         Assert.Null(result);
         Assert.Equal(ErrorCode.EmptyValue, useCase.Error);
-        Assert.Equal(0, write.InstanceUpdateCalls);
+        Assert.Equal(0, write.ExecuteCalls);
         Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }
 
     [Fact]
-    public void ExecuteInstanceUpdate_ProducesSkipForEachConfiguredReason()
+    public void Execute_ProducesSkipForEachConfiguredReason()
     {
         var write = new FakeParameterWritePort();
         write.SkipsByElementId["missing"] = SkipReason.ParameterMissing;
@@ -50,19 +49,19 @@ public sealed class RunBatchUpdateUseCaseTests
         write.SkipsByElementId["group"] = SkipReason.ModelGroupMember;
         var useCase = new RunBatchUpdateUseCase(write);
         var session = AwaitingSession();
-        var operation = new ReplacementOperation(InstanceParam, "new", new InstanceScope(Scope));
+        var operation = new ReplacementOperation(InstanceParam, "new", Scope);
 
-        var result = useCase.Execute(session, operation, Scope);
+        var result = useCase.Execute(session, operation, Scope, NoProgress);
 
         Assert.NotNull(result);
-        Assert.Equal(ParameterBinding.Instance, result.Path);
-        Assert.Equal(0, result.InstanceOutcome!.UpdatedCount);
-        Assert.Equal(5, result.InstanceOutcome.Skips.Count);
-        Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.ParameterMissing);
-        Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.ParameterReadOnly);
-        Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.ParameterNotText);
-        Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.WorksharingOwnedByOther);
-        Assert.Contains(result.InstanceOutcome.Skips, s => s.Reason == SkipReason.ModelGroupMember);
+        Assert.False(result.RolledBack);
+        Assert.Equal(0, result.UpdatedCount);
+        Assert.Equal(5, result.Skips.Count);
+        Assert.Contains(result.Skips, s => s.Reason == SkipReason.ParameterMissing);
+        Assert.Contains(result.Skips, s => s.Reason == SkipReason.ParameterReadOnly);
+        Assert.Contains(result.Skips, s => s.Reason == SkipReason.ParameterNotText);
+        Assert.Contains(result.Skips, s => s.Reason == SkipReason.WorksharingOwnedByOther);
+        Assert.Contains(result.Skips, s => s.Reason == SkipReason.ModelGroupMember);
         Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }
 
@@ -72,53 +71,45 @@ public sealed class RunBatchUpdateUseCaseTests
         var write = new FakeParameterWritePort();
         var useCase = new RunBatchUpdateUseCase(write);
         var session = AwaitingSession();
-        var operation = new ReplacementOperation(InstanceParam, "new", new InstanceScope(Scope));
+        var operation = new ReplacementOperation(InstanceParam, "new", Scope);
 
-        useCase.Execute(session, operation, Scope);
-        var second = useCase.Execute(session, operation, Scope);
+        useCase.Execute(session, operation, Scope, NoProgress);
+        var second = useCase.Execute(session, operation, Scope, NoProgress);
 
         Assert.NotNull(second);
-        Assert.Equal(2, write.InstanceUpdateCalls);
+        Assert.Equal(2, write.ExecuteCalls);
         Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }
 
     [Fact]
-    public void ExecuteTypeUpdate_ReturnsAffectedTypesAndModelWideCount()
+    public void Execute_WhenTransactionReverts_ReportsRolledBackWithoutSuccessCount()
     {
-        var type = new ResolvedType("t1", "Basic Wall", [new ElementRef("1", "Walls")]);
-        var write = new FakeParameterWritePort
-        {
-            TypeUpdateResult = BatchExecutionResult.ForType([type], totalElementsUpdated: 12)
-        };
-        var candidate = new ParameterCandidate("Type Comments", ParameterBinding.Type, [new ElementRef("1", "Walls")]);
+        var write = new FakeParameterWritePort { Revert = true };
         var useCase = new RunBatchUpdateUseCase(write);
         var session = AwaitingSession();
-        var operation = new ReplacementOperation(candidate, "new", new TypeScope([type]));
+        var operation = new ReplacementOperation(InstanceParam, "new", Scope);
 
-        var result = useCase.Execute(session, operation, Scope);
+        var result = useCase.Execute(session, operation, Scope, NoProgress);
 
         Assert.NotNull(result);
-        Assert.Equal(ParameterBinding.Type, result.Path);
-        Assert.Equal(12, result.TypeOutcome!.TotalElementsUpdated);
-        Assert.Single(result.TypeOutcome.AffectedTypes);
-        Assert.Equal("Basic Wall", result.TypeOutcome.AffectedTypes[0].Name);
-        Assert.Equal(1, write.TypeUpdateCalls);
+        Assert.True(result.RolledBack);
+        Assert.Equal(0, result.UpdatedCount);
     }
 
     [Fact]
-    public void Execute_WhenGloballyBlocked_ProducesNoResultAndTouchesNothing()
+    public void Execute_WhenGloballyBlocked_ProducesNoResultAndBlocksSession()
     {
         var write = new FakeParameterWritePort { BlockGlobally = true };
         var useCase = new RunBatchUpdateUseCase(write);
         var session = AwaitingSession();
-        var operation = new ReplacementOperation(InstanceParam, "new", new InstanceScope(Scope));
+        var operation = new ReplacementOperation(InstanceParam, "new", Scope);
 
-        var result = useCase.Execute(session, operation, Scope);
+        var result = useCase.Execute(session, operation, Scope, NoProgress);
 
         Assert.Null(result);
         Assert.Equal(ErrorCode.DocumentNotModifiable, useCase.Error);
         Assert.Equal(SessionState.Blocked, session.State);
-        Assert.Equal(1, write.InstanceUpdateCalls);
+        Assert.Equal(1, write.ExecuteCalls);
     }
 
     private static Session AwaitingSession()

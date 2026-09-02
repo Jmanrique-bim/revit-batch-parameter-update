@@ -1,30 +1,17 @@
 namespace BatchParamUpdate.Domain.Model;
 
-public sealed record InstanceOutcome(int UpdatedCount, IReadOnlyList<ElementSkip> Skips);
-
-public sealed record TypeOutcome(IReadOnlyList<ResolvedType> AffectedTypes, int TotalElementsUpdated);
-
-public sealed class BatchExecutionResult
+/// <summary>
+/// Outcome of running a batch instance-parameter update: how many elements were written, which
+/// were skipped and why, and whether the enclosing transaction actually committed.
+/// </summary>
+public sealed record BatchExecutionResult(
+    int UpdatedCount,
+    IReadOnlyList<ElementSkip> Skips,
+    bool RolledBack)
 {
-    private BatchExecutionResult(
-        ParameterBinding path,
-        InstanceOutcome? instanceOutcome,
-        TypeOutcome? typeOutcome)
-    {
-        Path = path;
-        InstanceOutcome = instanceOutcome;
-        TypeOutcome = typeOutcome;
-    }
+    public static BatchExecutionResult Committed(int updatedCount, IReadOnlyList<ElementSkip> skips)
+        => new(updatedCount, skips, RolledBack: false);
 
-    public ParameterBinding Path { get; }
-
-    public InstanceOutcome? InstanceOutcome { get; }
-
-    public TypeOutcome? TypeOutcome { get; }
-
-    public static BatchExecutionResult ForInstance(int updatedCount, IReadOnlyList<ElementSkip> skips)
-        => new(ParameterBinding.Instance, new InstanceOutcome(updatedCount, skips), typeOutcome: null);
-
-    public static BatchExecutionResult ForType(IReadOnlyList<ResolvedType> affectedTypes, int totalElementsUpdated)
-        => new(ParameterBinding.Type, instanceOutcome: null, new TypeOutcome(affectedTypes, totalElementsUpdated));
+    public static BatchExecutionResult Reverted(IReadOnlyList<ElementSkip> skips)
+        => new(UpdatedCount: 0, skips, RolledBack: true);
 }

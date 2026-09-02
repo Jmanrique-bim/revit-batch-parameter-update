@@ -28,10 +28,7 @@ public sealed class DiscoverParametersUseCaseTests
     [Fact]
     public void Choose_WhenStartedWithEmptyScope_DoesNotReturnOperation()
     {
-        var candidate = new ParameterCandidate(
-            "Comments",
-            ParameterBinding.Instance,
-            [new ElementRef("1", "Walls")]);
+        var candidate = new ParameterCandidate("Comments", [new ElementRef("1", "Walls")]);
         var empty = new SelectionContext([], SelectionOrigin.ManualPick);
         var useCase = new DiscoverParametersUseCase(new FakeParameterDiscoveryPort());
         var session = new Session();
@@ -44,19 +41,16 @@ public sealed class DiscoverParametersUseCaseTests
     }
 
     [Fact]
-    public void Choose_TypeCandidate_SetsWideBlastWarningWithoutBlocking()
+    public void Choose_ValidCandidate_ReturnsOperationScopedToSelection_AndAdvancesSession()
     {
-        var candidate = new ParameterCandidate(
-            "Type Comments",
-            ParameterBinding.Type,
-            [new ElementRef("1", "Walls")]);
+        var candidate = new ParameterCandidate("Comments", Scope.ElementRefs);
         var useCase = new DiscoverParametersUseCase(new FakeParameterDiscoveryPort());
         var session = DiscoveringSession();
 
         var result = useCase.Choose(candidate, Scope, session);
 
         Assert.NotNull(result);
-        Assert.True(result.RequiresWideBlastRadiusWarning);
+        Assert.Equal(Scope, result.Scope);
         Assert.Null(useCase.Error);
         Assert.Equal(SessionState.AwaitingReplacementValue, session.State);
     }

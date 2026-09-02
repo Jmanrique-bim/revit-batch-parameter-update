@@ -2,28 +2,23 @@ namespace BatchParamUpdate.Domain.Model;
 
 public sealed record ParameterCandidate(
     string Name,
-    ParameterBinding Binding,
     IReadOnlyList<ElementRef> SourceElementRefs,
-    IReadOnlyList<string> ObservedValues)
+    IReadOnlyList<string> ObservedValues,
+    ParameterKey Key = default)
 {
-    public ParameterCandidate(
-        string name,
-        ParameterBinding binding,
-        IReadOnlyList<ElementRef> sourceElementRefs)
-        : this(name, binding, sourceElementRefs, [])
+    public ParameterCandidate(string name, IReadOnlyList<ElementRef> sourceElementRefs)
+        : this(name, sourceElementRefs, [], ParameterKey.ByName(name))
     {
     }
 
-    internal static IReadOnlyList<ParameterCandidate> Deduplicate(
-        IEnumerable<ParameterCandidate> candidates,
-        ParameterBinding binding)
+    /// <summary>Key with a guaranteed name fallback.</summary>
+    public ParameterKey ResolvedKey => Key.Name is null ? ParameterKey.ByName(Name) : Key;
+
+    internal static IReadOnlyList<ParameterCandidate> Deduplicate(IEnumerable<ParameterCandidate> candidates)
     {
         var map = new Dictionary<string, ParameterCandidate>(StringComparer.OrdinalIgnoreCase);
         foreach (var candidate in candidates)
         {
-            if (candidate.Binding != binding)
-                continue;
-
             if (map.TryGetValue(candidate.Name, out var existing))
             {
                 var merged = existing.SourceElementRefs
