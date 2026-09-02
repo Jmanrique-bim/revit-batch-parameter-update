@@ -26,10 +26,10 @@ The command fails immediately (no window) if there is no `ActiveUIDocument` (`Er
 |---|---|---|
 | Open with pre-existing selection | `EstablishSelectionUseCase` + `DiscoverParametersUseCase.Discover` | Instance + Type lists populated |
 | Open with empty selection | empty `SelectionContext` (`SelectionOrigin.ManualPick`) | **Select Elements** enabled |
-| Pick elements | `SelectElementsViewModel` → `IElementSelectionPort.PromptManualSelection` | rediscover candidates |
+| Pick elements | `SelectElementsViewModel` → `IElementSelectionPort.PromptManualSelection` | rediscover; `Retarget` then `ReplaceSets` |
 | Type in search | `SharedSearchViewModel` | live filter of both lists |
-| Select a parameter in either list | `DiscoverParametersUseCase.Choose` | `SessionState.AwaitingReplacementValue` + current-value line |
-| Run update | `ReplacementValueViewModel` → `RunBatchUpdateUseCase.Execute` | write + summary |
+| Select a parameter in either list | `DiscoverParametersUseCase.Choose` | `AwaitingReplacementValue` + current-value line, or null if session cannot advance |
+| Run update | `ReplacementValueViewModel` (`CanRun` bound) → `RunBatchUpdateUseCase.Execute` | write + summary |
 
 Details: [HOW_TO_SELECTION.md](HOW_TO_SELECTION.md), [HOW_TO_DISCOVER_PARAMETERS.md](HOW_TO_DISCOVER_PARAMETERS.md), [HOW_TO_BATCH_UPDATE.md](HOW_TO_BATCH_UPDATE.md), [HOW_TO_SESSIONS.md](HOW_TO_SESSIONS.md), [HOW_TO_MVVM.md](HOW_TO_MVVM.md).
 

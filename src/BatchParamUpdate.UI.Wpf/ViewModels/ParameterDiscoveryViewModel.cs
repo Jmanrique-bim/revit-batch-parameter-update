@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Input;
 using BatchParamUpdate.Application.UseCases;
 using BatchParamUpdate.Domain.ErrorCatalog;
 using BatchParamUpdate.Domain.Model;
@@ -139,7 +138,6 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CurrentValueSummary));
         OnPropertyChanged(nameof(HasCurrentValueSummary));
         OnPropertyChanged(nameof(ShowWideBlastWarning));
-        CommandManager.InvalidateRequerySuggested();
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

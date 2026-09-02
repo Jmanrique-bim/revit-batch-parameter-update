@@ -24,10 +24,10 @@ Discovery does not write the model.
 
 ## Runtime path
 
-1. Command (or a later pick) calls `DiscoverParametersUseCase.Discover(scope)` → both port methods; records phase timing `"Discovery"`.
+1. Command (or a later pick) calls `DiscoverParametersUseCase.Discover(scope)` → both port methods; records phase timing `"Discovery"`. After a manual pick the command updates `ParameterDiscoveryViewModel` scope (`Retarget`) **before** `ReplaceSets`, so `Choose` never runs against the empty launch context.
 2. `SharedSearchViewModel.ReplaceSets` holds the full sets. Typing filters both lists with `Name.Contains(text, OrdinalIgnoreCase)`. Empty search text = unfiltered.
 3. Search matches are recorded via `RecordSessionUseCase.RecordSearch`.
-4. Selecting a list item is the choose step: Instance clears Type and vice versa, then `DiscoverParametersUseCase.Choose` runs immediately. Session → `AwaitingReplacementValue`. The UI shows distinct `ObservedValues` captured at discovery (union: more than one current value is expected).
+4. Selecting a list item is the choose step: Instance clears Type and vice versa, then `DiscoverParametersUseCase.Choose` runs immediately. `Choose` returns a `ReplacementOperation` only after the session is `AwaitingReplacementValue` (`Started` + valid scope, or already `Discovering` / `AwaitingReplacementValue`). Empty scope while `Started` returns null — no current-value line, **Run update** stays disabled. On success the UI shows distinct `ObservedValues` captured at discovery (union: more than one current value is expected).
 5. Type selection also sets `ShowWideBlastWarning` (inline, non-modal). Instance does not. There is no extra Continue confirmation.
 
 ## Constraints

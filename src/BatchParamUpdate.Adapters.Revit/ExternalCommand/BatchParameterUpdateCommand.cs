@@ -100,8 +100,8 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
                 if (!next.IsValid)
                     return;
                 var (instance, type) = discover.Discover(next);
-                searchVm.ReplaceSets(instance, type);
                 discoveryVm.Retarget(next);
+                searchVm.ReplaceSets(instance, type);
                 record.Trace($"Selection updated origin={next.Origin} count={next.ElementRefs.Count}");
             };
 
@@ -114,7 +114,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
             discoveryVm.PropertyChanged += (_, args) =>
             {
                 if (args.PropertyName == nameof(ParameterDiscoveryViewModel.Operation))
-                    System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+                    replacementVm.NotifyCanRun();
             };
 
             window = new MainWindow();

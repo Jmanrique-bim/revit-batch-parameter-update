@@ -34,6 +34,12 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         RunCommand = new RelayCommand(Run, () => CanRun);
     }
 
+    public void NotifyCanRun()
+    {
+        OnPropertyChanged(nameof(CanRun));
+        (RunCommand as RelayCommand)?.RaiseCanExecuteChanged();
+    }
+
     public string NewValue
     {
         get => _newValue;
@@ -44,8 +50,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
             _newValue = value;
             OnPropertyChanged();
             OnPropertyChanged(nameof(ValidationMessage));
-            OnPropertyChanged(nameof(CanRun));
-            CommandManager.InvalidateRequerySuggested();
+            NotifyCanRun();
         }
     }
 
@@ -79,7 +84,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         finally
         {
             _execution.IsExecuting = false;
-            CommandManager.InvalidateRequerySuggested();
+            NotifyCanRun();
         }
     }
 

@@ -42,15 +42,22 @@ public sealed class DiscoverParametersUseCase
         }
 
         Error = null;
-        ExecutionScope execution = candidate.Binding == ParameterBinding.Instance
-            ? new InstanceScope(scope)
-            : new TypeScope([]);
 
         if (session.State == SessionState.Started && scope.IsValid)
             session.TransitionTo(SessionState.Discovering);
 
         if (session.State == SessionState.Discovering)
             session.TransitionTo(SessionState.AwaitingReplacementValue);
+
+        if (session.State != SessionState.AwaitingReplacementValue)
+        {
+            _recorder?.Trace("Choose blocked: session not awaiting replacement");
+            return null;
+        }
+
+        ExecutionScope execution = candidate.Binding == ParameterBinding.Instance
+            ? new InstanceScope(scope)
+            : new TypeScope([]);
 
         _recorder?.RecordParameterSelected(candidate);
         return new ReplacementOperation(candidate, newValue: "", execution);

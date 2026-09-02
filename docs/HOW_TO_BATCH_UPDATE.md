@@ -13,6 +13,8 @@ Purpose: write one replacement string onto the chosen parameter, Instance or Typ
 
 ## Gate before write
 
+The **Run update** button is enabled only when `ReplacementValueViewModel.CanRun` is true (non-whitespace value and `SessionState.AwaitingReplacementValue`). `Choose` must have returned an operation first; see `docs/HOW_TO_MVVM.md`.
+
 `RunBatchUpdateUseCase.Execute` requires `operation.HasReplacementValue` (non-whitespace). Otherwise `ErrorCode.EmptyValue` and no write. Session then `Executing`.
 
 Binding on `operation.TargetParameter` selects the port method:
