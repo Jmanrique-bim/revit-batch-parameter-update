@@ -31,7 +31,19 @@ public sealed class RunBatchUpdateUseCase
 
         session.TransitionTo(SessionState.Executing);
 
-        var result = _write.Execute(scope, operation.TargetParameter, operation.NewValue, progress);
+        BatchExecutionResult? result;
+        try
+        {
+            result = _write.Execute(scope, operation.TargetParameter, operation.NewValue, progress);
+        }
+        catch
+        {
+            // The write threw (e.g. Revit rejected the transaction). Leave the session in a
+            // defined terminal state instead of stuck at Executing, then let it propagate.
+            Error = ErrorCode.DocumentNotModifiable;
+            session.TransitionTo(SessionState.Blocked);
+            throw;
+        }
 
         if (result is null)
         {

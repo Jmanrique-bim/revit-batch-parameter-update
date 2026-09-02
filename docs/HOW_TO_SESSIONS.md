@@ -17,7 +17,7 @@ Illegal transitions throw. Where they happen:
 
 - `BatchUpdateCoordinator.Rediscover` (pre-existing selection or manual pick): `Started` → `Discovering`.
 - `DiscoverParametersUseCase.Choose`: `Discovering` → `AwaitingReplacementValue`.
-- `RunBatchUpdateUseCase.Execute`: `AwaitingReplacementValue` → `Executing` → `AwaitingReplacementValue` (committed) or `Blocked` (transaction did not start, or rolled back).
+- `RunBatchUpdateUseCase.Execute`: `AwaitingReplacementValue` → `Executing` → `AwaitingReplacementValue` (committed) or `Blocked` (transaction did not start, rolled back, or the write threw — the throw is caught only to move `Executing` → `Blocked`, then re-thrown).
 - `BatchUpdateCoordinator.Complete` (window closed): `AwaitingReplacementValue` → `Completed` if a batch actually ran, else `Cancelled` if not already terminal.
 
 ## Tracing (events, not inline calls)

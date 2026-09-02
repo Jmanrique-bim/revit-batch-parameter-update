@@ -9,6 +9,8 @@ public sealed class FakeParameterWritePort : IParameterWritePort
 
     public bool Revert { get; set; }
 
+    public Exception? ThrowOnExecute { get; set; }
+
     public Dictionary<string, SkipReason> SkipsByElementId { get; } = new();
 
     public int ExecuteCalls { get; private set; }
@@ -31,6 +33,8 @@ public sealed class FakeParameterWritePort : IParameterWritePort
         LastScope = scope;
         LastTargetParameter = targetParameter;
         LastNewValue = newValue;
+        if (ThrowOnExecute is { } ex)
+            throw ex;
         if (BlockGlobally)
             return null;
 
