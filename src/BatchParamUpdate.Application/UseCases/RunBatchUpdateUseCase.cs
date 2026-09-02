@@ -38,11 +38,9 @@ public sealed class RunBatchUpdateUseCase
         }
         catch
         {
-            // The write threw (e.g. Revit rejected the transaction). Leave the session in a
-            // defined terminal state instead of stuck at Executing, then let it propagate.
-            Error = ErrorCode.DocumentNotModifiable;
-            session.TransitionTo(SessionState.Blocked);
-            throw;
+            // Same terminal as a null write result so the coordinator can copy Error, emit
+            // FlowBlocked / StateChanged, and raise Changed. Rethrowing skipped that bookkeeping.
+            result = null;
         }
 
         if (result is null)

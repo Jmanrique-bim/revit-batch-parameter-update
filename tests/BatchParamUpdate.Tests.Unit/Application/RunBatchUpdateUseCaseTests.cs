@@ -113,15 +113,16 @@ public sealed class RunBatchUpdateUseCaseTests
     }
 
     [Fact]
-    public void Execute_WhenWriteThrows_BlocksSessionAndRethrows()
+    public void Execute_WhenWriteThrows_BlocksSessionAndReturnsNull()
     {
         var write = new FakeParameterWritePort { ThrowOnExecute = new InvalidOperationException("Revit said no") };
         var useCase = new RunBatchUpdateUseCase(write);
         var session = AwaitingSession();
         var operation = new ReplacementOperation(InstanceParam, "new", Scope);
 
-        Assert.Throws<InvalidOperationException>(() => useCase.Execute(session, operation, Scope, NoProgress));
+        var result = useCase.Execute(session, operation, Scope, NoProgress);
 
+        Assert.Null(result);
         Assert.Equal(SessionState.Blocked, session.State);
         Assert.Equal(ErrorCode.DocumentNotModifiable, useCase.Error);
     }
