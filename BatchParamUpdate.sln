@@ -21,8 +21,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchParamUpdate.Adapters.R
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchParamUpdate.Adapters.Revit.2026", "src\BatchParamUpdate.Adapters.Revit.2026\BatchParamUpdate.Adapters.Revit.2026.csproj", "{304CC835-4C7A-42A4-993D-1D6D4090BEAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchParamUpdate.Adapters.Revit.2027", "src\BatchParamUpdate.Adapters.Revit.2027\BatchParamUpdate.Adapters.Revit.2027.csproj", "{1160AC47-32FF-4201-BCC9-E60626AAA114}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchParamUpdate.UI.Wpf", "src\BatchParamUpdate.UI.Wpf\BatchParamUpdate.UI.Wpf.csproj", "{30A78150-06C0-44C4-8A93-63CFF188C4E0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchParamUpdate.Installer", "src\BatchParamUpdate.Installer\BatchParamUpdate.Installer.csproj", "{79662DC3-5F2B-4A6A-8AB9-44EF1FDD7327}"
@@ -59,8 +57,6 @@ Global
 		{304CC835-4C7A-42A4-993D-1D6D4090BEAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{304CC835-4C7A-42A4-993D-1D6D4090BEAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{304CC835-4C7A-42A4-993D-1D6D4090BEAA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1160AC47-32FF-4201-BCC9-E60626AAA114}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1160AC47-32FF-4201-BCC9-E60626AAA114}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30A78150-06C0-44C4-8A93-63CFF188C4E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{30A78150-06C0-44C4-8A93-63CFF188C4E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30A78150-06C0-44C4-8A93-63CFF188C4E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -85,7 +81,6 @@ Global
 		{8E2F4A91-6C3B-4D7E-A1F0-9B5C2D8E3A14} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{CE48EA69-E1F9-4E99-B7C8-24D7A3C8464C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{304CC835-4C7A-42A4-993D-1D6D4090BEAA} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
-		{1160AC47-32FF-4201-BCC9-E60626AAA114} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{30A78150-06C0-44C4-8A93-63CFF188C4E0} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{79662DC3-5F2B-4A6A-8AB9-44EF1FDD7327} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{175904BE-3449-4CBA-BE1F-D76E46011B98} = {B0A1C2D3-E4F5-6789-ABCD-EF0123456789}
@@ -94,6 +89,5 @@ Global
 		src\BatchParamUpdate.Adapters.Revit\BatchParamUpdate.Adapters.Revit.projitems*{8E2F4A91-6C3B-4D7E-A1F0-9B5C2D8E3A14}*SharedItemsImports = 13
 		src\BatchParamUpdate.Adapters.Revit\BatchParamUpdate.Adapters.Revit.projitems*{CE48EA69-E1F9-4E99-B7C8-24D7A3C8464C}*SharedItemsImports = 5
 		src\BatchParamUpdate.Adapters.Revit\BatchParamUpdate.Adapters.Revit.projitems*{304CC835-4C7A-42A4-993D-1D6D4090BEAA}*SharedItemsImports = 5
-		src\BatchParamUpdate.Adapters.Revit\BatchParamUpdate.Adapters.Revit.projitems*{1160AC47-32FF-4201-BCC9-E60626AAA114}*SharedItemsImports = 5
 	EndGlobalSection
 EndGlobal

@@ -58,19 +58,17 @@ public sealed class RevitInstallerAdapter : IInstallerPort
     }
 
     internal static string AddinsFolder(int year)
-        => year == 2027
-            ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Autodesk", "Revit 2027", "AddIns")
-            : Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-                "Autodesk",
-                "Revit",
-                "Addins",
-                year.ToString());
+        => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "Autodesk",
+            "Revit",
+            "Addins",
+            year.ToString());
 
     private static void EnsureSupported(int year)
     {
         if (!InstallerPackage.SupportedRevitYears.Contains(year))
-            throw new ArgumentOutOfRangeException(nameof(year), year, "This installer only supports Revit 2025, 2026, and 2027.");
+            throw new ArgumentOutOfRangeException(nameof(year), year, "This installer only supports Revit 2025 and 2026.");
     }
 
     private static string PayloadDirectory(int year)

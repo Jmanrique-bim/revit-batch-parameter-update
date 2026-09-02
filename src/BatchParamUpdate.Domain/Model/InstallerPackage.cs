@@ -9,7 +9,7 @@ public enum InstallerAction
 
 public sealed class InstallerPackage
 {
-    public static readonly IReadOnlyList<int> SupportedRevitYears = [2025, 2026, 2027];
+    public static readonly IReadOnlyList<int> SupportedRevitYears = [2025, 2026];
 
     public InstallerPackage(IReadOnlyList<int> detectedRevitYears)
     {

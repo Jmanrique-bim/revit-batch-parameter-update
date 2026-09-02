@@ -22,5 +22,11 @@ Thumbs.db
 .specify/
 ref docs/
 docs/diagrams/
+docs/specs/001-batch-parameter-update/**
+!docs/specs/001-batch-parameter-update/plan.md
+!docs/specs/001-batch-parameter-update/spec.md
+!docs/specs/001-batch-parameter-update/tasks.md
+!docs/specs/001-batch-parameter-update/checklists/
+!docs/specs/001-batch-parameter-update/checklists/requirements.md
 PR_SUMMARY.md
 src/BatchParamUpdate.Installer/Releases/

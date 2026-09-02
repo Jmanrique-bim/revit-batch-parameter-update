@@ -36,7 +36,7 @@ Details: [HOW_TO_SELECTION.md](HOW_TO_SELECTION.md), [HOW_TO_DISCOVER_PARAMETERS
 ## Debug vs installer
 
 - **Debug:** build a year project; `Year.props` copies `.addin` + output to `%AppData%\Autodesk\REVIT\Addins\{year}`. Restart Revit.
-- **Release install:** `src/BatchParamUpdate.Installer/pack.ps1` then `Setup.exe` / `Installer.exe`. Needs Velopack CLI (`vpk`) and a .NET 10 SDK for the Revit 2027 (`net10.0-windows`) payload. The installer host calls `VelopackApp.Build().Run()` in `Program.Main` before the WPF window.
+- **Release install:** `src/BatchParamUpdate.Installer/pack.ps1` then `Setup.exe` / `Installer.exe`. Needs Velopack CLI (`vpk`). The installer host calls `VelopackApp.Build().Run()` in `Program.Main` before the WPF window.
 
 ## Diagrams
 
