@@ -49,17 +49,15 @@ public sealed class NdjsonSessionRecorder : ISessionRecorderPort
             r.SessionId,
             r.TimestampUtc,
             r.QueryText,
-            r.MatchedInInstanceSet,
-            r.MatchedInTypeSet
+            r.Matched
         },
-        ParameterSelected r => new { type = "parameter_selected", r.SessionId, r.TimestampUtc, r.Name, binding = r.Binding.ToString() },
+        ParameterSelected r => new { type = "parameter_selected", r.SessionId, r.TimestampUtc, r.Name },
         PhaseTiming r => new { type = "phase_timing", r.SessionId, r.TimestampUtc, r.Phase, r.ElapsedMs },
         BatchResult r => new
         {
             type = "batch_result",
             r.SessionId,
             r.TimestampUtc,
-            path = r.Path.ToString(),
             r.UpdatedCount,
             r.SkippedCounts,
             r.CountsByCategory
