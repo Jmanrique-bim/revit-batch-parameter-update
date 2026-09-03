@@ -1,0 +1,62 @@
+<Project>
+  <!-- One props file for the two year shells; RevitYear is set by the importing csproj. -->
+  <PropertyGroup>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>BatchParamUpdate.Adapters.Revit</RootNamespace>
+    <AssemblyName>BatchParamUpdate.Adapters.Revit.$(RevitYear)</AssemblyName>
+    <PlatformTarget>x64</PlatformTarget>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <NoWarn>$(NoWarn);MSB3277</NoWarn>
+    <RevitInstallDir Condition="'$(RevitInstallDir)'==''">$(ProgramW6432)\Autodesk\Revit $(RevitYear)</RevitInstallDir>
+    <RevitAddinDebugDir>$(AppData)\Autodesk\REVIT\Addins\$(RevitYear)</RevitAddinDebugDir>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(RevitYear)'=='2025'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <DefineConstants>$(DefineConstants);REVIT2025;REVIT2025_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RevitYear)'=='2026'">
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <DefineConstants>$(DefineConstants);REVIT2026;REVIT2025_OR_GREATER;REVIT2026_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="RevitAPI">
+      <HintPath>$(RevitInstallDir)\RevitAPI.dll</HintPath>
+      <Private>false</Private>
+      <CopyLocal>false</CopyLocal>
+    </Reference>
+    <Reference Include="RevitAPIUI">
+      <HintPath>$(RevitInstallDir)\RevitAPIUI.dll</HintPath>
+      <Private>false</Private>
+      <CopyLocal>false</CopyLocal>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Application\BatchParamUpdate.Application.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Core\BatchParamUpdate.Core.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.Adapters.Persistence\BatchParamUpdate.Adapters.Persistence.csproj" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)..\BatchParamUpdate.UI.Wpf\BatchParamUpdate.UI.Wpf.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildProjectDirectory)\*.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildThisFileDirectory)BatchParamUpdate.Adapters.Revit.projitems" Label="Shared" />
+
+  <!-- Copy Debug *and* Release. Pack is Release; if this stays Debug-only,
+       Revit 2026 keeps a stale F5 payload while 2025 gets the installer copy. -->
+  <Target Name="CopyAddinForDebug" AfterTargets="Build" Condition="'$(CI)'!='true'">
+    <MakeDir Directories="$(RevitAddinDebugDir)\BatchParamUpdate" />
+    <ItemGroup>
+      <_AddinFiles Include="$(MSBuildProjectDirectory)\*.addin" />
+      <_OutputFiles Include="$(TargetDir)**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_AddinFiles)" DestinationFolder="$(RevitAddinDebugDir)" SkipUnchangedFiles="false" ContinueOnError="true" />
+    <Copy SourceFiles="@(_OutputFiles)" DestinationFolder="$(RevitAddinDebugDir)\BatchParamUpdate\%(RecursiveDir)" SkipUnchangedFiles="false" ContinueOnError="true" />
+  </Target>
+</Project>

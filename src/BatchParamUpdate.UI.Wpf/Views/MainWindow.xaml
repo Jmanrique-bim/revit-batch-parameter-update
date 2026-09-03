@@ -1,0 +1,220 @@
+<Window x:Class="BatchParamUpdate.UI.Wpf.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:BatchParamUpdate.UI.Wpf.Views"
+        Title="Batch Parameter Update"
+        Height="760"
+        Width="620"
+        Background="White">
+  <!--
+    Layout: compact ribbon (Option 3 from the UI redesign). Selection and
+    search live in a top ribbon; a single full-width panel lists the
+    discovered writable text instance parameters; the run action stays
+    single-sourced next to the replacement value. The summary's skip
+    report is Variant C: search box + paginated grid + CSV export, backed
+    by BatchSummaryViewModel.PagedSkips so a run that skips hundreds of
+    elements never renders them all at once.
+    See docs/HOW_TO_MVVM.md and docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md.
+  -->
+  <Window.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="/BatchParamUpdate.UI.Wpf;component/Theme.xaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Window.Resources>
+
+  <DockPanel>
+    <!-- Ribbon: Selection + Search groups. Execute lives only at the replacement-value row below. -->
+    <Border DockPanel.Dock="Top" Background="{StaticResource IndigoDarkBrush}" Padding="14,10">
+      <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+          <Button x:Name="SelectElementsButton"
+                  Content="Select Elements"
+                  Command="{Binding SelectElementsCommand}"
+                  IsEnabled="{Binding IsSelectElementsEnabled}"
+                  Style="{StaticResource SecondaryButtonStyle}"
+                  HorizontalAlignment="Left" />
+          <TextBlock Text="SELECTION" Style="{StaticResource RibbonCaptionStyle}" />
+        </StackPanel>
+
+        <Rectangle Width="1" Fill="{StaticResource RibbonDividerBrush}" Margin="16,0" />
+
+        <StackPanel Orientation="Vertical">
+          <TextBox x:Name="SharedSearchBox"
+                   Width="220"
+                   Padding="7,6"
+                   BorderThickness="0"
+                   Text="{Binding Text, UpdateSourceTrigger=PropertyChanged}" />
+          <TextBlock Text="SEARCH SHARED PARAMETERS" Style="{StaticResource RibbonCaptionStyle}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <StackPanel Margin="16">
+        <TextBlock x:Name="EmptyScopeBanner"
+                   Text="No elements are in scope. Select one or more elements before continuing."
+                   TextWrapping="Wrap"
+                   Foreground="{StaticResource ErrorBrush}"
+                   Margin="0,0,0,12"
+                   Visibility="{Binding HasNoElementsInScope, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+        <views:InstanceParameterDialog x:Name="ParameterPanel" MinHeight="260" />
+
+        <TextBlock x:Name="AdvanceErrorBanner"
+                   Margin="0,12,0,0"
+                   Foreground="{StaticResource ErrorBrush}"
+                   TextWrapping="Wrap"
+                   Text="{Binding ErrorMessage}" />
+
+        <!-- Replacement value + the single Run update action. -->
+        <Border x:Name="ReplacementPanel"
+                Margin="0,14,0,0"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Padding="14">
+          <StackPanel>
+            <Expander Header="Current values"
+                      IsExpanded="True"
+                      Margin="0,0,0,8"
+                      Visibility="{Binding HasCurrentValueSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
+              <TextBlock TextWrapping="Wrap"
+                         Foreground="{StaticResource MutedTextBrush}"
+                         Text="{Binding CurrentValueSummary}" />
+            </Expander>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Grid.Column="0" Text="Replacement value" VerticalAlignment="Center" Margin="0,0,10,0" />
+              <TextBox Grid.Column="1"
+                       Padding="7,6"
+                       VerticalContentAlignment="Center"
+                       FontFamily="Consolas"
+                       BorderBrush="{StaticResource IndigoBrush}"
+                       Text="{Binding NewValue, UpdateSourceTrigger=PropertyChanged}" />
+              <Button Grid.Column="2"
+                      Content="Run update"
+                      Command="{Binding RunCommand}"
+                      IsEnabled="{Binding CanRun}"
+                      Style="{StaticResource PrimaryButtonStyle}"
+                      Margin="10,0,0,0" />
+            </Grid>
+            <TextBlock Margin="0,6,0,0"
+                       Foreground="{StaticResource ErrorBrush}"
+                       TextWrapping="Wrap"
+                       Text="{Binding ValidationMessage}" />
+          </StackPanel>
+        </Border>
+
+        <ProgressBar x:Name="ExecutionProgress"
+                     Margin="0,12,0,0"
+                     Height="6"
+                     Minimum="0"
+                     Maximum="{Binding Total, Mode=OneWay}"
+                     Value="{Binding Done, Mode=OneWay}"
+                     Foreground="{StaticResource IndigoBrush}"
+                     Visibility="{Binding IsExecuting, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+        <!-- Summary — Report Panel Variant C: search + paginated grid + CSV export. -->
+        <StackPanel x:Name="SummaryPanel" Margin="0,16,0,0">
+          <TextBlock FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource IndigoDarkBrush}"
+                     Text="{Binding Headline}" TextWrapping="Wrap" />
+
+          <Border Margin="0,10,0,0"
+                  Background="White"
+                  BorderBrush="{StaticResource BorderBrush}"
+                  BorderThickness="1"
+                  CornerRadius="6"
+                  Visibility="{Binding HasSkips, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <DockPanel LastChildFill="True">
+
+              <!-- toolbar: filter + export -->
+              <Grid DockPanel.Dock="Top" Margin="12,10,12,8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Grid.Column="0"
+                         Padding="7,6"
+                         Margin="0,0,10,0"
+                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" />
+                <Button Grid.Column="1"
+                        Content="Export CSV"
+                        Command="{Binding ExportCommand}"
+                        Style="{StaticResource SecondaryButtonStyle}" />
+              </Grid>
+
+              <TextBlock DockPanel.Dock="Top"
+                         Margin="12,0,12,4"
+                         FontSize="10.5"
+                         FontFamily="Consolas"
+                         Foreground="{StaticResource MutedTextBrush}"
+                         Text="{Binding ExportStatusMessage}"
+                         TextWrapping="Wrap"
+                         Visibility="{Binding HasExportStatusMessage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+              <!-- pager footer -->
+              <Grid DockPanel.Dock="Bottom" Margin="12,8,12,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           FontFamily="Consolas"
+                           Foreground="{StaticResource MutedTextBrush}"
+                           Text="{Binding PageSummary}" />
+                <Button Grid.Column="1" Content="‹" Style="{StaticResource PagerButtonStyle}" Command="{Binding PreviousPageCommand}" />
+                <TextBlock Grid.Column="2" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="11" Margin="8,0" FontFamily="Consolas">
+                  <Run Text="{Binding PageNumber, Mode=OneWay}" /><Run Text=" / " /><Run Text="{Binding TotalPages, Mode=OneWay}" />
+                </TextBlock>
+                <Button Grid.Column="3" Content="›" Style="{StaticResource PagerButtonStyle}" Command="{Binding NextPageCommand}" />
+              </Grid>
+
+              <!-- column headers -->
+              <Border DockPanel.Dock="Top" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,1">
+                <Grid Margin="12,5">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="3*" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Text="ELEMENT" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" />
+                  <TextBlock Grid.Column="1" Text="CATEGORY" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" />
+                  <TextBlock Grid.Column="2" Text="REASON" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedTextBrush}" />
+                </Grid>
+              </Border>
+
+              <!-- one page (<= 20 rows) of the filtered skip list -->
+              <ItemsControl ItemsSource="{Binding PagedSkips}" Margin="12,4,12,4" AlternationCount="2">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Grid MinHeight="26">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="3*" />
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Grid.Column="0" Text="{Binding Element.DisplayLabel}" FontWeight="SemiBold" FontSize="12" Padding="0,4" TextWrapping="Wrap" />
+                      <TextBlock Grid.Column="1" Text="{Binding Element.CategoryName}" FontFamily="Consolas" FontSize="10.5" Foreground="{StaticResource IndigoBrush}" Padding="0,4" />
+                      <TextBlock Grid.Column="2" Text="{Binding Message}" FontSize="12" Foreground="{StaticResource MutedTextBrush}" Padding="0,4" TextWrapping="Wrap" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </DockPanel>
+          </Border>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>
