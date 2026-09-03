@@ -10,7 +10,7 @@ Supported hosts: **Autodesk Revit 2025 and 2026** only. The installer never offe
 
 ## Download
 
-Official binary is the GitHub Release asset (HTTPS, versioned). Do not use Drive, WeTransfer, or a raw git blob.
+Official binary is the GitHub Release asset
 
 - [Download BatchParamUpdate-win-Setup.exe](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest/download/BatchParamUpdate-win-Setup.exe)
 - [Release notes and SHA256](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest)
