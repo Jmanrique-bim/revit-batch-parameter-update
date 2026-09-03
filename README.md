@@ -17,6 +17,12 @@ Official binary is the GitHub Release asset (HTTPS, versioned). Do not use Drive
 
 Per-user install into `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights.
 
+## Walkthrough
+
+End-to-end tutorial of the shipped add-in: ribbon launch, selection, instance-parameter search, batch write, and summary.
+
+![Batch Parameter Update end-to-end run](docs/BatchParamUpdateRunBook.gif)
+
 ## How it works
 
 Hexagonal (ports and adapters) inside the Revit process, plus MVVM for the WPF window.
