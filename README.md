@@ -25,20 +25,10 @@ Edge may show **Couldn't download — Download error**, and Microsoft Defender m
 
 - The release ships `BatchParamUpdate-win-Setup.exe`, a Velopack bootstrapper that is **not Authenticode-signed** (no paid code-signing certificate on this OSS deliverable).
 - Windows SmartScreen and Defender use **cloud reputation**: once the file hash is scored as unknown or risky, the same block can appear on every machine that downloads it.
-- Velopack is not the root cause — any unsigned `Setup.exe` from an unknown publisher tends to trigger the same heuristics. The installer only copies the `.addin` and assemblies into `%APPDATA%\Autodesk\Revit\Addins\{year}`; it does not require administrator rights or modify system folders.
 
 **How to download safely**
 
 1. Prefer the [latest release](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest) page. If the browser blocks the file, use **⋯ → Keep** / **Keep anyway**.
-2. Or download with PowerShell and verify the SHA256 published in the release notes:
-
-```powershell
-$out = "$env:USERPROFILE\Downloads\BatchParamUpdate-win-Setup.exe"
-Invoke-WebRequest `
-  -Uri "https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest/download/BatchParamUpdate-win-Setup.exe" `
-  -OutFile $out
-Get-FileHash $out -Algorithm SHA256
-```
 
 Compare the hash to the value on the release page before running the installer.
 
