@@ -34,8 +34,6 @@ Compare the hash to the value on the release page before running the installer.
 
 3. **Build from source** (no installer): clone this repo, run `dotnet build` on `BatchParamUpdate.Adapters.Revit.2025` or `.2026` with Revit installed — the `.addin` is copied to the per-user add-ins folder automatically (see [Build, debug, install](#build-debug-install)).
 
-**Long-term fix:** sign releases with a trusted Authenticode certificate (e.g. [SignPath Foundation](https://signpath.org/) for qualifying open-source projects). Until then, use the official GitHub Release URL above — not Google Drive, WeTransfer, or other mirrors.
-
 ## Walkthrough
 
 End-to-end tutorial of the shipped add-in: ribbon launch, selection, instance-parameter search, batch write, and summary.
