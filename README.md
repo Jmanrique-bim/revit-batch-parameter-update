@@ -17,6 +17,35 @@ Official binary is the GitHub Release asset
 
 Per-user install into `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights.
 
+### If Windows or your browser blocks the download
+
+Edge may show **Couldn't download — Download error**, and Microsoft Defender may flag the file on other PCs as well. This is a known **false positive** for unsigned Windows installers — not evidence of malware in the add-in.
+
+**Why it happens**
+
+- The release ships `BatchParamUpdate-win-Setup.exe`, a Velopack bootstrapper that is **not Authenticode-signed** (no paid code-signing certificate on this OSS deliverable).
+- Windows SmartScreen and Defender use **cloud reputation**: once the file hash is scored as unknown or risky, the same block can appear on every machine that downloads it.
+- Velopack is not the root cause — any unsigned `Setup.exe` from an unknown publisher tends to trigger the same heuristics. The installer only copies the `.addin` and assemblies into `%APPDATA%\Autodesk\Revit\Addins\{year}`; it does not require administrator rights or modify system folders.
+
+**How to download safely**
+
+1. Prefer the [latest release](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest) page. If the browser blocks the file, use **⋯ → Keep** / **Keep anyway**.
+2. Or download with PowerShell and verify the SHA256 published in the release notes:
+
+```powershell
+$out = "$env:USERPROFILE\Downloads\BatchParamUpdate-win-Setup.exe"
+Invoke-WebRequest `
+  -Uri "https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest/download/BatchParamUpdate-win-Setup.exe" `
+  -OutFile $out
+Get-FileHash $out -Algorithm SHA256
+```
+
+Compare the hash to the value on the release page before running the installer.
+
+3. **Build from source** (no installer): clone this repo, run `dotnet build` on `BatchParamUpdate.Adapters.Revit.2025` or `.2026` with Revit installed — the `.addin` is copied to the per-user add-ins folder automatically (see [Build, debug, install](#build-debug-install)).
+
+**Long-term fix:** sign releases with a trusted Authenticode certificate (e.g. [SignPath Foundation](https://signpath.org/) for qualifying open-source projects). Until then, use the official GitHub Release URL above — not Google Drive, WeTransfer, or other mirrors.
+
 ## Walkthrough
 
 End-to-end tutorial of the shipped add-in: ribbon launch, selection, instance-parameter search, batch write, and summary.
