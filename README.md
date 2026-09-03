@@ -70,7 +70,7 @@ Installer (from `src/BatchParamUpdate.Installer/`):
 Prerequisites: Velopack CLI (`vpk`) on PATH. `Installer.exe` must call `VelopackApp.Build().Run()` before any WPF window (`Program.Main` + Velopack 1.2.0) or `vpk pack` refuses the binary. `pack.ps1` fails if `dotnet` / `vpk` return non-zero.
 
 ```powershell
-.\pack.ps1 -Version 1.0.0
+.\pack.ps1 -Version 1.0.1
 ```
 
 That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. The installer UI lists detected 2025/2026 installs and copies the matching assembly plus `.addin` (`Application` class = `App`) into the **per-user** add-ins folder `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights required.
