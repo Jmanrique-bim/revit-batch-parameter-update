@@ -12,7 +12,7 @@ One WPF window. A `MainViewModel` owns six child view-models; `MainWindow.Bind(M
 
 ## Who talks to whom
 
-`CompositionRoot` builds the `BatchUpdateCoordinator` and the view-models, then `MainViewModel`. Child view-models **never reference each other** — they read `coordinator.State` (`WorkflowState`: `Scope`, `Target`, `NewValue`) and call coordinator methods. `MainViewModel` is the single subscriber to `coordinator.Changed`; on each change it refreshes the children (`Select.NotifyScopeChanged`, `Replacement.NotifyCanRun`) and re-exposes `ErrorMessage`.
+`CompositionRoot` builds the `BatchUpdateCoordinator` and the view-models, then `MainViewModel`. Child view-models **never reference each other** — they read `coordinator.State` (`WorkflowState`: `Scope`, `Target`, `NewValue`) and call coordinator methods. `MainViewModel` is the single subscriber to the coordinator (`Changed` → `Select.NotifyScopeChanged`, `Replacement.NotifyCanRun`) and to `BatchExecutionViewModel.IsExecuting` (`Select.SetBusy`).
 
 ## Bind map
 
@@ -34,11 +34,11 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 2. Search `Text` → `TextChanged` → `ParameterDiscoveryViewModel.RefreshFilters`; `MainViewModel` records the search via `coordinator.RecordSearch`.
 3. Selecting a parameter → `coordinator.ChooseParameter` → `DiscoverParametersUseCase.Choose`. Blocked with `ErrorCode.EmptySelection` if the scope is empty.
 4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue` + not currently executing). The command is always executable: after Revit 2026 `PickObjects` (Finish/Cancel), `CommandManager` does not requery and a stale `CanExecute=false` would keep the button off.
-5. `Run()` sets `IsExecuting`, notifies `CanRun` (button off), calls `coordinator.Run(new DispatcherPumpProgress(...))`, then `BatchSummaryViewModel.Show`.
+5. `Run()` sets `IsExecuting`, notifies `CanRun` and Select Elements off, calls `coordinator.Run(new DispatcherPumpProgress(...))`, then `BatchSummaryViewModel.Show`. Before unlocking it drains queued Input so clicks that landed during the bar do not start a second Run/pick.
 
 ## Progress bar
 
-`ProgressBar` binds `Value`/`Maximum` to `BatchExecutionViewModel.Done`/`Total`. The write runs synchronously on the modal thread, so `DispatcherPumpProgress.Report` drains `Dispatcher.CurrentDispatcher` at `Render` between elements — high enough to paint the bar, below `Input` so a second click cannot re-enter while the transaction is open (`Application.Current` is null inside Revit). (Upgrade path in `DispatcherPumpProgress`: modeless window + `IExternalEventHandler`.)
+`ProgressBar` binds `Value`/`Maximum` to `BatchExecutionViewModel.Done`/`Total`. The write runs synchronously on the modal thread. `DispatcherPumpProgress.Report` pumps `Render` so the bar moves without processing clicks; after the write, `DrainQueuedInput` pumps `Input` while Run/Select are still disabled so those clicks no-op (`Application.Current` is null inside Revit). (Upgrade path in `DispatcherPumpProgress`: modeless window + `IExternalEventHandler`.)
 
 ## Summary report at scale
 

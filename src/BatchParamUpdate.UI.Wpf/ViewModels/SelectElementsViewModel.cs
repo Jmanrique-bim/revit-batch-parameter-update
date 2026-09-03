@@ -14,6 +14,7 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
     private readonly bool _manualPickAllowed;
     private readonly Action? _hideHost;
     private readonly Action? _showHost;
+    private bool _busy;
 
     public SelectElementsViewModel(
         IElementSelectionPort selection,
@@ -32,7 +33,7 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
 
     public ICommand SelectElementsCommand { get; }
 
-    public bool IsSelectElementsEnabled => _manualPickAllowed;
+    public bool IsSelectElementsEnabled => _manualPickAllowed && !_busy;
 
     public bool HasNoElementsInScope => !_coordinator.State.HasScope;
 
@@ -40,9 +41,17 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
 
     public void NotifyScopeChanged() => OnPropertyChanged(nameof(HasNoElementsInScope));
 
+    public void SetBusy(bool busy)
+    {
+        if (_busy == busy)
+            return;
+        _busy = busy;
+        OnPropertyChanged(nameof(IsSelectElementsEnabled));
+    }
+
     private void PickManually()
     {
-        if (_coordinator.Step == SessionState.Executing)
+        if (!IsSelectElementsEnabled)
             return;
 
         _hideHost?.Invoke();

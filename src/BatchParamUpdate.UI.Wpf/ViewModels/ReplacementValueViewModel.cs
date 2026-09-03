@@ -101,6 +101,9 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         }
         finally
         {
+            // Clicks during the write sat in the Input queue (Report pumps Render only).
+            // Drain them while CanRun is still false so they do not start a second batch.
+            DispatcherPumpProgress.DrainQueuedInput();
             _execution.IsExecuting = false;
             NotifyCanRun();
         }

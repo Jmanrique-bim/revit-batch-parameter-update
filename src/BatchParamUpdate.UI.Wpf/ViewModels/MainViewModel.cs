@@ -38,6 +38,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             _coordinator.RecordSearch(Search.Text, [.. Search.Query.Matches.Select(c => c.Name)]);
 
         _coordinator.Changed += OnCoordinatorChanged;
+        Execution.PropertyChanged += OnExecutionChanged;
         OnCoordinatorChanged();
     }
 
@@ -71,6 +72,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ErrorMessage));
         Select.NotifyScopeChanged();
         Replacement.NotifyCanRun();
+    }
+
+    private void OnExecutionChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is null or nameof(BatchExecutionViewModel.IsExecuting))
+            Select.SetBusy(Execution.IsExecuting);
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)
