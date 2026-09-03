@@ -57,6 +57,8 @@ public sealed class RevitParameterWritePort : IParameterWritePort
     {
         var element = GetElement(eref);
         var param = element is null ? null : FindParameter(element, key);
+        if (param is not null && !InstanceBoundParameter.IsInstance(param))
+            param = null;
 
         var state = new ParameterState(
             ElementFound: element is not null,

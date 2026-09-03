@@ -43,8 +43,23 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
     public void RefreshFilters()
     {
         FilteredInstanceCandidates = Search.Query.Matches;
+        if (_selectedInstance is not null
+            && !FilteredInstanceCandidates.Contains(_selectedInstance))
+        {
+            _selectedInstance = null;
+            OnPropertyChanged(nameof(SelectedInstance));
+        }
+
         OnPropertyChanged(nameof(FilteredInstanceCandidates));
         OnPropertyChanged(nameof(HasNoInstanceResults));
+    }
+
+    public void ClearSelection()
+    {
+        if (_selectedInstance is null)
+            return;
+        _selectedInstance = null;
+        OnPropertyChanged(nameof(SelectedInstance));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

@@ -65,6 +65,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             _lastCandidates = _coordinator.Candidates;
             Search.ReplaceSet(_coordinator.Candidates);
+            Discovery.ClearSelection();
         }
 
         OnPropertyChanged(nameof(ErrorMessage));

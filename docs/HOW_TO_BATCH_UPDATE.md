@@ -28,7 +28,7 @@ Purpose: write one replacement string onto the chosen writable text **instance**
 | element not found (deleted) | `ElementNotFound` |
 | `element.GroupId` set | `ModelGroupMember` |
 | checked out by another user | `WorksharingOwnedByOther` |
-| parameter not found | `ParameterMissing` |
+| parameter not found, or type-bound (instance-only write) | `ParameterMissing` |
 | parameter read-only | `ParameterReadOnly` |
 | not `StorageType.String` | `ParameterNotText` |
 | `Parameter.Set` returns `false` (silent Revit reject) | `ValueRejected` |

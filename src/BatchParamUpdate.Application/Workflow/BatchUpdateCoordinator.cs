@@ -216,12 +216,15 @@ public sealed class BatchUpdateCoordinator
     {
         using var timer = PhaseTimer.Start();
         Candidates = _discover.Discover(State.Scope);
+        State.SetTarget(null);
         _observer.On(new WorkflowEvent.ParametersDiscovered(Candidates.Candidates.Count, timer.ElapsedMs));
 
-        if (_session.State == SessionState.Started && State.Scope.IsValid)
+        if (State.Scope.IsValid
+            && _session.State is SessionState.Started or SessionState.AwaitingReplacementValue)
         {
+            var from = _session.State;
             _session.TransitionTo(SessionState.Discovering);
-            _observer.On(new WorkflowEvent.StateChanged(SessionState.Started, SessionState.Discovering, "scope"));
+            _observer.On(new WorkflowEvent.StateChanged(from, SessionState.Discovering, "scope"));
         }
     }
 

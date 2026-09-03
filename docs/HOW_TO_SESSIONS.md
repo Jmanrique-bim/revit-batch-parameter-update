@@ -9,13 +9,14 @@ Purpose: one command invocation = one `Session` state machine plus two sidecar f
 ```
 Started → Discovering → AwaitingReplacementValue → Executing → AwaitingReplacementValue
                                                      Executing → Blocked
+AwaitingReplacementValue → Discovering   (new pick / re-selection; Target is cleared)
 AwaitingReplacementValue → Completed   (window close after at least one committed batch)
 any non-terminal → Cancelled
 ```
 
 Illegal transitions throw. Where they happen:
 
-- `BatchUpdateCoordinator.Rediscover` (pre-existing selection or manual pick): `Started` → `Discovering`.
+- `BatchUpdateCoordinator.Rediscover` (pre-existing selection or manual pick): `Started` → `Discovering`. A later pick from `AwaitingReplacementValue` also returns to `Discovering` and clears `WorkflowState.Target`.
 - `DiscoverParametersUseCase.Choose`: `Discovering` → `AwaitingReplacementValue`.
 - `RunBatchUpdateUseCase.Execute`: `AwaitingReplacementValue` → `Executing` → `AwaitingReplacementValue` (committed) or `Blocked` (transaction did not start, or rolled back).
 - `BatchUpdateCoordinator.Complete` (window closed): `AwaitingReplacementValue` → `Completed` if a batch actually ran, else `Cancelled` if not already terminal.

@@ -64,7 +64,7 @@ public sealed class SessionTraceListenerTests
     [Fact]
     public void BatchFinished_WhenRolledBack_DoesNotCountSuccesses()
     {
-        var (listener, recorder, _) = NewListener();
+        var (listener, recorder, logger) = NewListener();
         var walls = new ElementRef("1", "Walls");
         var doors = new ElementRef("2", "Doors");
         var scope = new SelectionContext([walls, doors], SelectionOrigin.PreExisting);
@@ -77,6 +77,9 @@ public sealed class SessionTraceListenerTests
         Assert.Equal(1, batch.SkippedCounts[nameof(SkipReason.ParameterMissing)]);
         Assert.Equal(1, batch.CountsByCategory["Doors"].Warning);
         Assert.False(batch.CountsByCategory.ContainsKey("Walls"));
+        Assert.DoesNotContain(
+            logger.Lines,
+            l => l.Contains(nameof(WarningCode.SessionRecordFailed), StringComparison.Ordinal));
     }
 
     [Fact]

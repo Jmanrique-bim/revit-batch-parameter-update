@@ -38,7 +38,7 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 
 ## Progress bar
 
-`ProgressBar` binds `Value`/`Maximum` to `BatchExecutionViewModel.Done`/`Total`. The write runs synchronously on the modal thread, so `DispatcherPumpProgress.Report` drains the WPF queue between elements to keep the bar moving. (Upgrade path in `DispatcherPumpProgress`: modeless window + `IExternalEventHandler`.)
+`ProgressBar` binds `Value`/`Maximum` to `BatchExecutionViewModel.Done`/`Total`. The write runs synchronously on the modal thread, so `DispatcherPumpProgress.Report` drains `Dispatcher.CurrentDispatcher` between elements to keep the bar moving (`Application.Current` is null inside Revit). (Upgrade path in `DispatcherPumpProgress`: modeless window + `IExternalEventHandler`.)
 
 ## Summary report at scale
 

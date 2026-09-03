@@ -13,7 +13,7 @@ Purpose: from a valid `SelectionContext`, build one deduplicated candidate set o
 
 ## Filter the adapter applies
 
-For each in-scope element, walk `element.Parameters`. Keep a parameter only if `StorageType.String`, `!IsReadOnly`, and `Definition.Name` is non-empty. Emit `ParameterCandidate(name, [source ElementRef], [AsString])`. Domain then unions by name and distinct observed values.
+For each in-scope element, walk `element.Parameters`. Keep a parameter only if `StorageType.String`, `!IsReadOnly`, `Definition.Name` is non-empty, and `InstanceBoundParameter.IsInstance` (not a type binding; not the same `Parameter.Id` as on `element.GetTypeId()`). Emit `ParameterCandidate(name, [source ElementRef], [AsString])`. Domain then unions by name and distinct observed values.
 
 Discovery does not write the model.
 

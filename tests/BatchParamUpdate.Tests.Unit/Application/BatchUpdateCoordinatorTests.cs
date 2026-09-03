@@ -110,6 +110,25 @@ public sealed class BatchUpdateCoordinatorTests
     }
 
     [Fact]
+    public void AdoptManualSelection_AfterChoose_ClearsTargetAndReturnsToDiscovering()
+    {
+        var h = new CoordinatorHarness();
+        h.WithDiscovered("Comments");
+        h.WithPreExisting(new ElementRef("1", "Walls"));
+        h.Coordinator.EstablishSelection();
+        h.Coordinator.ChooseParameter(h.Coordinator.Candidates.Candidates[0]);
+        h.Coordinator.SetValue("v");
+
+        h.Coordinator.AdoptManualSelection(
+            new SelectionContext([new ElementRef("7", "Walls")], SelectionOrigin.ManualPick));
+
+        Assert.Null(h.Coordinator.State.Target);
+        Assert.Equal(SessionState.Discovering, h.Coordinator.Step);
+        Assert.Null(h.Coordinator.Run());
+        Assert.Equal(ErrorCode.NoParameterSelected, h.Coordinator.LastError);
+    }
+
+    [Fact]
     public void Complete_WhenReadyButNeverRan_LogsCanRunNeverClicked()
     {
         var h = new CoordinatorHarness();

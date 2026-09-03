@@ -49,6 +49,14 @@ public sealed class SessionTests
     }
 
     [Fact]
+    public void AwaitingReplacementValue_CanReturnToDiscovering()
+    {
+        var session = AdvanceTo(SessionState.AwaitingReplacementValue);
+        session.TransitionTo(SessionState.Discovering);
+        Assert.Equal(SessionState.Discovering, session.State);
+    }
+
+    [Fact]
     public void Started_CannotSkipToExecuting()
     {
         var session = new Session();

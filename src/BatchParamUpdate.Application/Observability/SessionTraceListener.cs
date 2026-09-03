@@ -96,10 +96,7 @@ public sealed class SessionTraceListener : IWorkflowObserver
     private void LogBatchOutcome(BatchExecutionResult result, SelectionContext scope)
     {
         if (result.RolledBack)
-        {
-            _logger.Warn("Transaction rolled back; no elements were modified.", WarningCode.SessionRecordFailed);
             return;
-        }
 
         var skippedIds = result.Skips.Select(s => s.Element.Id).ToHashSet(StringComparer.Ordinal);
         foreach (var element in scope.ElementRefs.Where(e => !skippedIds.Contains(e.Id)))

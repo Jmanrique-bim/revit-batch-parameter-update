@@ -23,7 +23,9 @@ public sealed class RevitParameterDiscoveryPort : IParameterDiscoveryPort
 
             foreach (Parameter parameter in element.Parameters)
             {
-                if (parameter.StorageType != StorageType.String || parameter.IsReadOnly)
+                if (parameter.StorageType != StorageType.String
+                    || parameter.IsReadOnly
+                    || !InstanceBoundParameter.IsInstance(parameter))
                     continue;
 
                 var name = parameter.Definition?.Name;
