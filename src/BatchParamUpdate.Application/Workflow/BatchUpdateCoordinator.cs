@@ -71,7 +71,7 @@ public sealed class BatchUpdateCoordinator
 
     public void AdoptManualSelection(SelectionContext picked)
     {
-        if (!picked.IsValid)
+        if (_session.State == SessionState.Executing || !picked.IsValid)
             return;
 
         State.SetScope(picked);
@@ -82,6 +82,9 @@ public sealed class BatchUpdateCoordinator
 
     public bool ChooseParameter(ParameterCandidate candidate)
     {
+        if (_session.State == SessionState.Executing)
+            return false;
+
         if (!State.Scope.IsValid)
         {
             Block(ErrorCode.EmptySelection);
@@ -115,6 +118,9 @@ public sealed class BatchUpdateCoordinator
 
     public BatchExecutionResult? Run(IProgress<BatchProgress>? progress = null)
     {
+        if (_session.State == SessionState.Executing)
+            return LastResult;
+
         if (!State.Scope.IsValid)
         {
             Block(ErrorCode.EmptySelection);
@@ -162,12 +168,10 @@ public sealed class BatchUpdateCoordinator
             && !string.IsNullOrWhiteSpace(State.NewValue)
             && from == SessionState.AwaitingReplacementValue;
 
-        if (from is SessionState.AwaitingReplacementValue && _batchRan)
-            _session.TransitionTo(SessionState.Completed);
-        else if (from is not SessionState.Completed
-                 and not SessionState.Blocked
-                 and not SessionState.Cancelled)
-            _session.TransitionTo(SessionState.Cancelled);
+        if (from is not SessionState.Completed
+            and not SessionState.Blocked
+            and not SessionState.Cancelled)
+            _session.TransitionTo(_batchRan ? SessionState.Completed : SessionState.Cancelled);
 
         EmitStateChange(from, "close");
         _observer.On(new WorkflowEvent.SessionEnded(_session.State)

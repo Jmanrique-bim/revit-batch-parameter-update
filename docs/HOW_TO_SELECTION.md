@@ -26,7 +26,7 @@ Purpose: produce a valid `SelectionContext` (one or more `ElementRef`s plus a `S
 2. `EstablishSelectionUseCase.DetectPreExisting()` returns whatever the port reports.
    - Valid → `SelectionResult.Established`; the coordinator sets `WorkflowState.Scope`, runs discovery, moves the session to `Discovering`.
    - Empty → `SelectionResult.NeedsManualPick`; the window still opens (User Story 2) with **Select Elements** enabled.
-3. `SelectElementsViewModel.PickManually` hides the host window, calls `IElementSelectionPort.PromptManualSelection`, shows it again, then `coordinator.AdoptManualSelection(picked)` — which sets the scope, re-runs discovery, and raises `Changed` so `MainViewModel` refreshes the child view-models.
+3. `SelectElementsViewModel.PickManually` hides the host window, calls `IElementSelectionPort.PromptManualSelection`, shows it again, then `coordinator.AdoptManualSelection(picked)` — which sets the scope, re-runs discovery, and raises `Changed` so `MainViewModel` refreshes the child view-models. A pick while `SessionState.Executing` is ignored (transaction is open).
 
 `SelectElementsViewModel.IsSelectElementsEnabled` is true only when the launch had no pre-existing selection. Trying to advance (choose a parameter, or Run) while the scope is still empty raises `ErrorCode.EmptySelection`, shown in the error banner.
 

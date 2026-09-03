@@ -33,12 +33,12 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 1. `SelectElementsCommand` → hide window → `PromptManualSelection` → show window → `coordinator.AdoptManualSelection`.
 2. Search `Text` → `TextChanged` → `ParameterDiscoveryViewModel.RefreshFilters`; `MainViewModel` records the search via `coordinator.RecordSearch`.
 3. Selecting a parameter → `coordinator.ChooseParameter` → `DiscoverParametersUseCase.Choose`. Blocked with `ErrorCode.EmptySelection` if the scope is empty.
-4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue`). The command is always executable: after Revit 2026 `PickObjects` (Finish/Cancel), `CommandManager` does not requery and a stale `CanExecute=false` would keep the button off.
-5. `Run()` sets `IsExecuting`, calls `coordinator.Run(new DispatcherPumpProgress(...))`, then `BatchSummaryViewModel.Show`.
+4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue` + not currently executing). The command is always executable: after Revit 2026 `PickObjects` (Finish/Cancel), `CommandManager` does not requery and a stale `CanExecute=false` would keep the button off.
+5. `Run()` sets `IsExecuting`, notifies `CanRun` (button off), calls `coordinator.Run(new DispatcherPumpProgress(...))`, then `BatchSummaryViewModel.Show`.
 
 ## Progress bar
 
-`ProgressBar` binds `Value`/`Maximum` to `BatchExecutionViewModel.Done`/`Total`. The write runs synchronously on the modal thread, so `DispatcherPumpProgress.Report` drains `Dispatcher.CurrentDispatcher` between elements to keep the bar moving (`Application.Current` is null inside Revit). (Upgrade path in `DispatcherPumpProgress`: modeless window + `IExternalEventHandler`.)
+`ProgressBar` binds `Value`/`Maximum` to `BatchExecutionViewModel.Done`/`Total`. The write runs synchronously on the modal thread, so `DispatcherPumpProgress.Report` drains `Dispatcher.CurrentDispatcher` at `Render` between elements — high enough to paint the bar, below `Input` so a second click cannot re-enter while the transaction is open (`Application.Current` is null inside Revit). (Upgrade path in `DispatcherPumpProgress`: modeless window + `IExternalEventHandler`.)
 
 ## Summary report at scale
 

@@ -48,7 +48,8 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         : null;
 
     public bool CanRun =>
-        _coordinator.State.Target is not null
+        !_execution.IsExecuting
+        && _coordinator.State.Target is not null
         && !string.IsNullOrWhiteSpace(NewValue)
         && _coordinator.Step == SessionState.AwaitingReplacementValue;
 
@@ -91,6 +92,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
             return;
 
         _execution.IsExecuting = true;
+        NotifyCanRun();
         try
         {
             var progress = new DispatcherPumpProgress(_execution.Report);

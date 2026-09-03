@@ -22,7 +22,9 @@ public sealed class Session
             SessionState.Discovering => from is SessionState.Started or SessionState.AwaitingReplacementValue,
             SessionState.AwaitingReplacementValue => from is SessionState.Discovering or SessionState.Executing,
             SessionState.Executing => from is SessionState.AwaitingReplacementValue,
-            SessionState.Completed => from is SessionState.Executing or SessionState.AwaitingReplacementValue,
+            SessionState.Completed => from is SessionState.Executing
+                or SessionState.AwaitingReplacementValue
+                or SessionState.Discovering,
             SessionState.Blocked => from is SessionState.Executing,
             SessionState.Cancelled => true,
             _ => false

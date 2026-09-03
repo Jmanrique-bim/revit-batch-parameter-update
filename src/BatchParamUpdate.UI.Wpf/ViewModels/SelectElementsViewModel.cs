@@ -42,6 +42,9 @@ public sealed class SelectElementsViewModel : INotifyPropertyChanged
 
     private void PickManually()
     {
+        if (_coordinator.Step == SessionState.Executing)
+            return;
+
         _hideHost?.Invoke();
         SelectionContext? picked;
         try

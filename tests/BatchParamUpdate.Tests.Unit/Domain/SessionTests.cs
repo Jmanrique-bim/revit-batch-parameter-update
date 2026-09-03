@@ -57,6 +57,18 @@ public sealed class SessionTests
     }
 
     [Fact]
+    public void Discovering_CanCompleteAfterACommittedBatch()
+    {
+        var session = AdvanceTo(SessionState.Discovering);
+        session.TransitionTo(SessionState.AwaitingReplacementValue);
+        session.TransitionTo(SessionState.Executing);
+        session.TransitionTo(SessionState.AwaitingReplacementValue);
+        session.TransitionTo(SessionState.Discovering);
+        session.TransitionTo(SessionState.Completed);
+        Assert.Equal(SessionState.Completed, session.State);
+    }
+
+    [Fact]
     public void Started_CannotSkipToExecuting()
     {
         var session = new Session();

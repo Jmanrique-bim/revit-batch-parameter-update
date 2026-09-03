@@ -15,7 +15,7 @@ Purpose: write one replacement string onto the chosen writable text **instance**
 
 ## Gate before write
 
-**Run update** is enabled only when `ReplacementValueViewModel.CanRun` is true: a chosen `WorkflowState.Target`, a non-whitespace value, and `SessionState.AwaitingReplacementValue`.
+**Run update** is enabled only when `ReplacementValueViewModel.CanRun` is true: a chosen `WorkflowState.Target`, a non-whitespace value, `SessionState.AwaitingReplacementValue`, and the write is not already running.
 
 `RunBatchUpdateUseCase.Execute` re-checks `operation.HasReplacementValue` (else `ErrorCode.EmptyValue`, no write). Session then `Executing`.
 

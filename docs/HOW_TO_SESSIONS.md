@@ -11,6 +11,7 @@ Started → Discovering → AwaitingReplacementValue → Executing → AwaitingR
                                                      Executing → Blocked
 AwaitingReplacementValue → Discovering   (new pick / re-selection; Target is cleared)
 AwaitingReplacementValue → Completed   (window close after at least one committed batch)
+Discovering → Completed                (same, if the user re-picked after a committed batch)
 any non-terminal → Cancelled
 ```
 
@@ -19,7 +20,7 @@ Illegal transitions throw. Where they happen:
 - `BatchUpdateCoordinator.Rediscover` (pre-existing selection or manual pick): `Started` → `Discovering`. A later pick from `AwaitingReplacementValue` also returns to `Discovering` and clears `WorkflowState.Target`.
 - `DiscoverParametersUseCase.Choose`: `Discovering` → `AwaitingReplacementValue`.
 - `RunBatchUpdateUseCase.Execute`: `AwaitingReplacementValue` → `Executing` → `AwaitingReplacementValue` (committed) or `Blocked` (transaction did not start, or rolled back).
-- `BatchUpdateCoordinator.Complete` (window closed): `AwaitingReplacementValue` → `Completed` if a batch actually ran, else `Cancelled` if not already terminal.
+- `BatchUpdateCoordinator.Complete` (window closed): `Completed` if a batch actually committed, including when the user re-picked and the session is back in `Discovering`; else `Cancelled` if not already terminal.
 
 ## Tracing (events, not inline calls)
 

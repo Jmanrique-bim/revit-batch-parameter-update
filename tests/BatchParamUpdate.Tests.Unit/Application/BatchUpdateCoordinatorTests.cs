@@ -129,6 +129,50 @@ public sealed class BatchUpdateCoordinatorTests
     }
 
     [Fact]
+    public void Run_WhenProgressReentersRunOrPick_DoesNotNestExecute()
+    {
+        var h = new CoordinatorHarness();
+        h.WithDiscovered("Comments");
+        h.WithPreExisting(new ElementRef("1", "Walls"));
+        h.Coordinator.EstablishSelection();
+        h.Coordinator.ChooseParameter(h.Coordinator.Candidates.Candidates[0]);
+        h.Coordinator.SetValue("v");
+
+        h.Coordinator.Run(new ImmediateProgress(_ =>
+        {
+            h.Coordinator.Run();
+            h.Coordinator.AdoptManualSelection(
+                new SelectionContext([new ElementRef("99", "Walls")], SelectionOrigin.ManualPick));
+        }));
+
+        Assert.Equal(1, h.Write.ExecuteCalls);
+        Assert.Equal("1", h.Coordinator.State.Scope.ElementRefs[0].Id);
+        Assert.Equal(SessionState.AwaitingReplacementValue, h.Coordinator.Step);
+    }
+
+    [Fact]
+    public void Complete_AfterCommittedBatchThenRepick_StaysCompleted()
+    {
+        var h = new CoordinatorHarness();
+        h.WithDiscovered("Comments");
+        h.WithPreExisting(new ElementRef("1", "Walls"));
+        h.Coordinator.EstablishSelection();
+        h.Coordinator.ChooseParameter(h.Coordinator.Candidates.Candidates[0]);
+        h.Coordinator.SetValue("v");
+        h.Coordinator.Run();
+
+        h.Coordinator.AdoptManualSelection(
+            new SelectionContext([new ElementRef("7", "Walls")], SelectionOrigin.ManualPick));
+        h.Coordinator.Complete();
+
+        Assert.Equal(SessionState.Completed, h.Coordinator.Step);
+        Assert.Contains(
+            h.Logger.Lines,
+            l => l.Contains("why=batch-ran", StringComparison.Ordinal)
+                 && l.Contains("session=Completed", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Complete_WhenReadyButNeverRan_LogsCanRunNeverClicked()
     {
         var h = new CoordinatorHarness();
@@ -146,5 +190,12 @@ public sealed class BatchUpdateCoordinatorTests
             l => l.Contains("why=can-run-never-clicked", StringComparison.Ordinal)
                  && l.Contains("canRun=true", StringComparison.Ordinal)
                  && l.Contains("param=Mark", StringComparison.Ordinal));
+    }
+
+    // Progress<T> posts to SynchronizationContext; the write path reports on the same
+    // stack, so the re-entry guard has to be exercised with a synchronous IProgress.
+    private sealed class ImmediateProgress(Action<BatchProgress> onReport) : IProgress<BatchProgress>
+    {
+        public void Report(BatchProgress value) => onReport(value);
     }
 }
