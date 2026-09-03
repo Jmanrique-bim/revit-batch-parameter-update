@@ -28,7 +28,7 @@ public sealed class RevitDialogSuppressionPort : INativeDialogSuppressionPort
         }
         catch (Autodesk.Revit.Exceptions.InvalidOperationException)
         {
-            // ponytail: some native dialogs reject OverrideResult; the FailuresPreprocessor is the other layer.
+            // Some native dialogs reject OverrideResult; the FailuresPreprocessor is the other layer.
         }
     }
 

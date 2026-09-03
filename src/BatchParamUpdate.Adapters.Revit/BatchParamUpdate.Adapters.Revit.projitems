@@ -9,7 +9,7 @@
     <Import_RootNamespace>BatchParamUpdate.Adapters.Revit</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <!-- ponytail: glob so later phases can add Selection/Discovery/Writing without editing this file. Ceiling: VS Shared Project explorer may not list new files until reload. -->
+    <!-- Glob so later phases can add Selection/Discovery/Writing without editing this file. VS Shared Project explorer may not list new files until reload. -->
     <Compile Include="$(MSBuildThisFileDirectory)**\*.cs" />
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Resources\*.png" />
   </ItemGroup>

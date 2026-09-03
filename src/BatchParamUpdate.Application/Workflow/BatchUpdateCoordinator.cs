@@ -186,7 +186,7 @@ public sealed class BatchUpdateCoordinator
         });
     }
 
-    // ponytail: one close-line instead of WPF CanExecute polls. "can-run-never-clicked"
+    // One close-line instead of WPF CanExecute polls. "can-run-never-clicked"
     // means the model was ready and the host never invoked Run (Revit 2026 CommandManager).
     private string CloseWhy(SessionState from, bool canRun)
     {

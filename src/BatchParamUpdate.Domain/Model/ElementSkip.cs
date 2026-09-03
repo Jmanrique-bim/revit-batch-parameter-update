@@ -14,7 +14,7 @@ public sealed record ElementSkip(
         return new ElementSkip(element, reason, code, ErrorWarningCatalog.Message(code));
     }
 
-    // ponytail: no dedicated 400 code for OtherSuppressedNativeDialog; reuse WORKSHARE-OWNED as the suppressed-dialog bucket.
+    // No dedicated 400 code for OtherSuppressedNativeDialog; reuse WORKSHARE-OWNED as the suppressed-dialog bucket.
     public static WarningCode ToWarningCode(SkipReason reason) => reason switch
     {
         SkipReason.ParameterMissing => WarningCode.ParamMissing,

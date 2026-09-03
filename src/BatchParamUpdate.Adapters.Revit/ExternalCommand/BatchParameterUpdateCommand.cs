@@ -50,7 +50,7 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
         {
             window = new MainWindow();
             window.Bind(composition.View);
-            // ponytail: ShowDialog + Hide() for PickObjects ends the modal loop on Revit 2026
+            // ShowDialog + Hide() for PickObjects ends the modal loop on Revit 2026
             // (Finish/Cancel palette). ShowDialog returns, finally Complete() cancels the
             // session ~ms after AdoptManualSelection — log why=no-parameter with no
             // Parameter selected. Modeless Show + PushFrame survives Hide/Show.

@@ -1,5 +1,5 @@
 <Project>
-  <!-- ponytail: one props file for the two year shells; RevitYear is set by the importing csproj. -->
+  <!-- One props file for the two year shells; RevitYear is set by the importing csproj. -->
   <PropertyGroup>
     <UseWPF>true</UseWPF>
     <RootNamespace>BatchParamUpdate.Adapters.Revit</RootNamespace>
@@ -48,7 +48,7 @@
 
   <Import Project="$(MSBuildThisFileDirectory)BatchParamUpdate.Adapters.Revit.projitems" Label="Shared" />
 
-  <!-- ponytail: copy Debug *and* Release. Pack is Release; if this stays Debug-only,
+  <!-- Copy Debug *and* Release. Pack is Release; if this stays Debug-only,
        Revit 2026 keeps a stale F5 payload while 2025 gets the installer copy. -->
   <Target Name="CopyAddinForDebug" AfterTargets="Build" Condition="'$(CI)'!='true'">
     <MakeDir Directories="$(RevitAddinDebugDir)\BatchParamUpdate" />

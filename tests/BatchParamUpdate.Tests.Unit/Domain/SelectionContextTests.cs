@@ -39,7 +39,7 @@ public sealed class SelectionContextTests
         Assert.False(SelectElementsEnabled(context));
     }
 
-    // ponytail: Domain cannot reference WPF; this is the FR-003/FR-004 rule SelectElementsViewModel applies.
+    // Domain cannot reference WPF; this is the FR-003/FR-004 rule SelectElementsViewModel applies.
     private static bool SelectElementsEnabled(SelectionContext context)
         => context.Origin == SelectionOrigin.ManualPick;
 }

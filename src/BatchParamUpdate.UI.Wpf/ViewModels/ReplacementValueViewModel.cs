@@ -21,7 +21,7 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         _coordinator = coordinator;
         _execution = execution;
         _summary = summary;
-        // ponytail: CanExecute stays true. After Revit 2026 PickObjects (Finish/Cancel),
+        // CanExecute stays true. After Revit 2026 PickObjects (Finish/Cancel),
         // CommandManager is dead and Button.IsEnabledCore ANDs a stale CanExecute cache,
         // so gating Run here keeps the button off even when CanRun is true. IsEnabled={CanRun}
         // is the only gate; CommandManager.InvalidateRequerySuggested is the upgrade if a

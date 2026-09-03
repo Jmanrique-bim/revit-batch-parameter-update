@@ -69,7 +69,7 @@ public sealed class RevitInstallerAdapter : IInstallerPort
     /// Removes a manifest + payload left in the all-users (%ProgramData%) location by an older
     /// installer version, so Revit does not load two manifests and register the command twice.
     /// </summary>
-    // ponytail: best-effort. If the process lacks rights to %ProgramData%, the stale copy stays
+    // Best-effort. If the process lacks rights to %ProgramData%, the stale copy stays
     // and Revit may double-load — no worse than before this cleanup existed. Elevate the
     // installer if that case matters.
     private static void RemoveLegacyAllUsers(int year)
