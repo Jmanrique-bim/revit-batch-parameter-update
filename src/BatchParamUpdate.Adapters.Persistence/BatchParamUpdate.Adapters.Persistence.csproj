@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>BatchParamUpdate.Adapters.Persistence</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
+    <ProjectReference Include="..\BatchParamUpdate.Core\BatchParamUpdate.Core.csproj" />
+  </ItemGroup>
+</Project>

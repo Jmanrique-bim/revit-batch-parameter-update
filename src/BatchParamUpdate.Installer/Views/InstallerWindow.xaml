@@ -1,0 +1,87 @@
+<Window x:Class="BatchParamUpdate.Installer.Views.InstallerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Batch Parameter Update — Installer"
+        Height="560"
+        Width="450"
+        MinHeight="420"
+        MinWidth="400"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Background="#12000000"
+        MouseLeftButtonDown="OnDrag">
+  <Border Background="White" Width="445" VerticalAlignment="Stretch" HorizontalAlignment="Center">
+    <DockPanel>
+      <Button DockPanel.Dock="Top"
+              Content="X"
+              HorizontalAlignment="Right"
+              Width="44"
+              Height="32"
+              Margin="0,8,8,0"
+              Click="OnClose"
+              Style="{StaticResource GhostButtonStyle}"
+              FontSize="18" />
+
+      <Border DockPanel.Dock="Bottom"
+              BorderBrush="{StaticResource BorderBrush}"
+              BorderThickness="0,1,0,0"
+              Padding="28,12">
+        <TextBlock TextWrapping="Wrap"
+                   Foreground="{StaticResource MutedTextBrush}"
+                   FontSize="11"
+                   Text="{Binding Status}" />
+      </Border>
+
+      <StackPanel Margin="28,8,28,0">
+        <TextBlock Text="Batch"
+                   FontSize="36"
+                   FontWeight="Light"
+                   Foreground="{StaticResource TextBrush}" />
+        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+          <Rectangle Width="14" Height="2" Fill="{StaticResource LavenderBrush}" VerticalAlignment="Center" />
+          <TextBlock Text="PARAMETER UPDATE"
+                     Margin="8,0,0,0"
+                     FontSize="10"
+                     FontWeight="Bold"
+                     Foreground="{StaticResource MutedTextBrush}" />
+        </StackPanel>
+        <TextBlock Margin="0,14,0,20"
+                   TextWrapping="Wrap"
+                   FontSize="11"
+                   Foreground="{StaticResource MutedTextBrush}"
+                   Text="Supported years are 2025 and 2026. Only detected installs are listed." />
+
+        <ItemsControl ItemsSource="{Binding Years}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <DockPanel Margin="0,0,0,18" LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+                  <TextBlock FontSize="20"
+                             Foreground="{StaticResource TextBrush}"
+                             Text="{Binding Year, StringFormat=Revit {0}}" />
+                  <TextBlock FontSize="10"
+                             Foreground="{StaticResource LavenderBrush}"
+                             Text="{Binding YearStatus}" />
+                </StackPanel>
+                <Button DockPanel.Dock="Right"
+                        Content="{Binding PrimaryLabel}"
+                        Command="{Binding PrimaryCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        MinWidth="76"
+                        VerticalAlignment="Center" />
+                <Button DockPanel.Dock="Right"
+                        Content="Uninstall"
+                        Command="{Binding UninstallCommand}"
+                        Style="{StaticResource GhostButtonStyle}"
+                        Margin="0,0,10,0"
+                        VerticalAlignment="Center" />
+              </DockPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</Window>

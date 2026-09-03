@@ -1,60 +1,87 @@
-# Revit Add-in: Batch Parameter Update
+# Batch Parameter Update
 
-**Author:** Juan Pablo Manrique  
-**Role:** Senior BIM Software Developer  
-**Assessment:** Technical Assessment — BIM Software Developer  
-**Effort target:** 4–6 hours  
-**Stack:** C# / .NET / Autodesk Revit API  
-**Status:** Repository scaffolding only. The add-in, installer, and source are not in this commit.
+Revit add-in that batch-writes one writable **text instance** parameter across a selection. Candidates are discovered from the current selection, listed in one searchable panel, and the chosen parameter is written on every selected element inside one reversible transaction.
 
-This public repository is the submission vehicle for a Hexagon Multivista technical assessment. Evaluators should be able to clone it without requesting access.
+**Author:** Juan Pablo Manrique
 
-## Objective
+**Who it is for:** BIM/Revit users who need a reversible, logged batch text-parameter update, and engineers extending this Hexagon assessment add-in.
 
-Build a small Revit add-in that batch-updates a **writable text instance parameter** on elements the user has already selected in the active model. The scope is intentionally narrow: a reliable command, clear code, and a reproducible package — not extra features.
+Supported hosts: **Autodesk Revit 2025 and 2026** only. The installer never offers Install/Update/Uninstall for any other year.
 
-## Required user flow (to be implemented)
+## Download
 
-1. The user selects one or more model elements in Revit.
-2. The user launches the add-in command.
-3. A simple desktop dialog (WPF or WinForms) asks for the parameter name and the new text value.
-4. The add-in updates the matching writable text instance parameter on each selected element.
-5. Elements that cannot be updated are skipped; the batch continues.
-6. A summary reports how many elements were updated and how many were skipped, with reasons.
+Official binary is the GitHub Release asset (HTTPS, versioned). Do not use Drive, WeTransfer, or a raw git blob.
 
-## Functional constraints (from the assignment)
+- [Download BatchParamUpdate-win-Setup.exe](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest/download/BatchParamUpdate-win-Setup.exe)
+- [Release notes and SHA256](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest)
 
-- Operate only on the **active document** and the **pre-command selection**.
-- Parameter name is user-supplied. Only **writable instance** parameters with **text/string storage** are in scope.
-- Model changes go through a valid **Revit transaction**. The model must not be left partially modified if the operation cannot proceed.
-- Handle empty selection, empty parameter name, missing parameter, read-only parameter, and non-text parameter without aborting the whole run.
-- Ship an **installer** so the add-in can be used in Revit without copying project files by hand.
-- Compatible Revit version(s) will be stated in this README once they are chosen and targeted. No version will be claimed without an intentional target.
+Per-user install into `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights.
 
-## Repository layout (planned)
+## Walkthrough
 
-When implementation starts, this repo will include:
+End-to-end tutorial of the shipped add-in: ribbon launch, selection, instance-parameter search, batch write, and summary.
 
-- C# solution / project files and Revit add-in configuration
-- Installer source and configuration
-- A built installer in the repo **or** a public GitHub Release linked from this README
-- Build, install, and usage instructions
-- Assumptions and limitations for evaluators
+![Batch Parameter Update end-to-end run](docs/BatchParamUpdateRunBook.gif)
 
-## Git branches
+## How it works
 
-| Branch | Purpose |
-| --- | --- |
-| `main` | Production-ready line. Reviewers clone this URL. |
-| `staging` | Pre-release integration. |
-| `dev` | Day-to-day development. |
+Hexagonal (ports and adapters) inside the Revit process, plus MVVM for the WPF window.
 
-Work lands on `dev`, moves through `staging`, then `main`. Commits will follow the process, not a single dump of the finished solution.
+1. `App` (`IExternalApplication`) registers a ribbon panel **Batch Parameter Update** and a **Batch Update** button.
+2. `BatchParameterUpdateCommand` is thin: it opens the session log, calls `CompositionRoot.Build(...)`, shows the window, and calls `BatchUpdateCoordinator.Complete()` on close.
+3. `CompositionRoot` (the one place that sees UI + persistence + Revit together) wires the ports, use cases, the `BatchUpdateCoordinator`, and the view-models.
+4. `BatchUpdateCoordinator` (Application) owns the flow: it is the only component that advances the `Session` and the only source of `WorkflowEvent`s. A single `SessionTraceListener` turns those events into the `.txt` log and NDJSON metrics — the flow logic itself contains no logging.
+5. Application use cases talk only to Domain ports. Year shells (`Adapters.Revit.20XX`) compile the shared Revit adapter source against that year's `RevitAPI.dll`.
+6. Unit tests in `tests/BatchParamUpdate.Tests.Unit` exercise Domain/Application with in-memory fakes — no RevitAPI. A `LayerDependencyTests` check fails if Domain/Application ever gain an outward dependency.
 
-## How to use this repo today
+See [docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md](docs/HOW_TO_HEXAGONAL_ARCHITECTURE.md) and [docs/HOW_TO_RUN.md](docs/HOW_TO_RUN.md).
 
-There is no add-in to build or install yet. This first commit establishes the public GitHub project, the branch scheme, and the assessment context.
+## Repository layout
 
-## License
+```
+BatchParamUpdate.sln
+src/
+  BatchParamUpdate.Domain/                 # model, ports, decision logic, error catalog (no RevitAPI)
+  BatchParamUpdate.Application/            # use cases, coordinator, observability
+  BatchParamUpdate.Core/                   # SessionFileLogger, runId, timers (no RevitAPI)
+  BatchParamUpdate.Adapters.Revit/         # shared adapter source (App, command, ports)
+  BatchParamUpdate.Adapters.Revit.2025/    # thin year shell + .addin (net8.0-windows)
+  BatchParamUpdate.Adapters.Revit.2026/    # same for 2026
+  BatchParamUpdate.Adapters.Persistence/   # NDJSON metrics
+  BatchParamUpdate.UI.Wpf/                 # MainWindow + ViewModels
+  BatchParamUpdate.Installer/              # Velopack WPF installer
+tests/BatchParamUpdate.Tests.Unit/
+docs/                                      # HOW_TO guides, diagrams, spec kit
+```
 
-Assessment submission. All rights reserved unless a license file is added later.
+## Build, debug, install
+
+Year adapters need that year's `RevitAPI.dll` / `RevitAPIUI.dll` under `%ProgramW6432%\Autodesk\Revit {year}`.
+
+```powershell
+dotnet test tests/BatchParamUpdate.Tests.Unit/BatchParamUpdate.Tests.Unit.csproj
+dotnet build BatchParamUpdate.sln -c Release
+```
+
+A **Debug** build of a year project copies the `.addin` and payload to `%AppData%\Autodesk\REVIT\Addins\{year}` (see `src/BatchParamUpdate.Adapters.Revit/Year.props`). Launch Revit for that year and use the ribbon button. The command requires an active, modifiable document.
+
+Installer (from `src/BatchParamUpdate.Installer/`):
+
+Prerequisites: Velopack CLI (`vpk`) on PATH. `Installer.exe` must call `VelopackApp.Build().Run()` before any WPF window (`Program.Main` + Velopack 1.2.0) or `vpk pack` refuses the binary. `pack.ps1` fails if `dotnet` / `vpk` return non-zero.
+
+```powershell
+.\pack.ps1 -Version 1.0.0
+```
+
+That publishes `Installer.exe`, copies each year payload, and runs `vpk pack -u BatchParamUpdate -e Installer.exe`. The installer UI lists detected 2025/2026 installs and copies the matching assembly plus `.addin` (`Application` class = `App`) into the **per-user** add-ins folder `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights required.
+
+Session artifacts:
+
+- Logs: `%LOCALAPPDATA%\juanManriqueHexagon\LOGS\{runId}-{documentName}.txt`
+- Metrics: `%LOCALAPPDATA%\juanManriqueHexagon\TRACKER\{runId}-{documentName}.json`
+
+## Documentation
+
+- [docs/README.md](docs/README.md) — HOW_TO index and diagrams
+- [docs/TESTING.md](docs/TESTING.md) — automated coverage and the manual Revit test matrix
+- Spec kit: [docs/specs/001-batch-parameter-update/](docs/specs/001-batch-parameter-update/) (`spec.md`, `plan.md`, `tasks.md`, `checklists/`)

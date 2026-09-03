@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>BatchParamUpdate.Installer</RootNamespace>
+    <AssemblyName>Installer</AssemblyName>
+    <StartupObject>BatchParamUpdate.Installer.Program</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Velopack" Version="1.2.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\BatchParamUpdate.Domain\BatchParamUpdate.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
+    <Page Include="..\BatchParamUpdate.UI.Wpf\Theme.xaml" Link="Theme.xaml" />
+  </ItemGroup>
+</Project>

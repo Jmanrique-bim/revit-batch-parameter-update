@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RevitYear>2025</RevitYear>
+  </PropertyGroup>
+  <Import Project="..\BatchParamUpdate.Adapters.Revit\Year.props" />
+</Project>
