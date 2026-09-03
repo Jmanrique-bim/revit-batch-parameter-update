@@ -1,3 +1,4 @@
+using System.Windows.Threading;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
@@ -49,7 +50,14 @@ public sealed class BatchParameterUpdateCommand : IExternalCommand
         {
             window = new MainWindow();
             window.Bind(composition.View);
-            window.ShowDialog();
+            // ponytail: ShowDialog + Hide() for PickObjects ends the modal loop on Revit 2026
+            // (Finish/Cancel palette). ShowDialog returns, finally Complete() cancels the
+            // session ~ms after AdoptManualSelection — log why=no-parameter with no
+            // Parameter selected. Modeless Show + PushFrame survives Hide/Show.
+            var frame = new DispatcherFrame();
+            window.Closed += (_, _) => frame.Continue = false;
+            window.Show();
+            Dispatcher.PushFrame(frame);
             return Result.Succeeded;
         }
         finally

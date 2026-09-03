@@ -69,7 +69,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         OnPropertyChanged(nameof(ErrorMessage));
         Select.NotifyScopeChanged();
-        Discovery.RefreshFromState();
         Replacement.NotifyCanRun();
     }
 

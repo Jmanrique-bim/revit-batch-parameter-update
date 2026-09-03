@@ -22,7 +22,7 @@ Illegal transitions throw. Where they happen:
 
 ## Tracing (events, not inline calls)
 
-The coordinator raises `WorkflowEvent`s (`SessionStarted`, `SelectionEstablished`, `ParametersDiscovered`, `SearchRan`, `ParameterChosen`, `BatchStarting`, `BatchFinished`, `FlowBlocked`, `StateChanged`, `SessionEnded`). A single `SessionTraceListener` (`src/BatchParamUpdate.Application/Observability/`) is the only subscriber that writes anything:
+The coordinator raises `WorkflowEvent`s (`SessionStarted`, `SelectionEstablished`, `ParametersDiscovered`, `SearchRan`, `ParameterChosen`, `BatchStarting`, `BatchFinished`, `FlowBlocked`, `StateChanged`, `SessionEnded`). On close, `SessionEnded` carries a `Why` snapshot (`empty-scope`, `no-parameter`, `empty-value`, `can-run-never-clicked`, `batch-ran`, `blocked:{code}`) so the last `.txt` lines show why Run never happened. A single `SessionTraceListener` (`src/BatchParamUpdate.Application/Observability/`) is the only subscriber that writes anything:
 
 - `ILoggerPort` → `Core.SessionFileLogger` → `.txt`
 - `ISessionRecorderPort` → `Adapters.Persistence.NdjsonSessionRecorder` → one JSON object per line

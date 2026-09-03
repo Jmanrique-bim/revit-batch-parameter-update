@@ -35,31 +35,8 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             if (value is not null)
                 _coordinator.ChooseParameter(value);
-            RefreshFromState();
         }
     }
-
-    public string CurrentValueSummary
-    {
-        get
-        {
-            var target = _coordinator.State.Target;
-            if (target is null)
-                return "";
-
-            var values = target.ObservedValues
-                .Select(v => string.IsNullOrEmpty(v) ? "(empty)" : v)
-                .Distinct(StringComparer.Ordinal)
-                .ToList();
-            if (values.Count == 0)
-                return $"No current value for {target.Name}.";
-            if (values.Count == 1)
-                return $"Current value of {target.Name}: {values[0]}";
-            return $"Current values of {target.Name}: {string.Join(", ", values)}";
-        }
-    }
-
-    public bool HasCurrentValueSummary => _coordinator.State.Target is not null;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -68,12 +45,6 @@ public sealed class ParameterDiscoveryViewModel : INotifyPropertyChanged
         FilteredInstanceCandidates = Search.Query.Matches;
         OnPropertyChanged(nameof(FilteredInstanceCandidates));
         OnPropertyChanged(nameof(HasNoInstanceResults));
-    }
-
-    public void RefreshFromState()
-    {
-        OnPropertyChanged(nameof(CurrentValueSummary));
-        OnPropertyChanged(nameof(HasCurrentValueSummary));
     }
 
     private void OnPropertyChanged([CallerMemberName] string? name = null)

@@ -1,6 +1,6 @@
 # HOW_TO: run the add-in
 
-End-to-end path from Revit load to batch write. All of this runs on the **Revit API thread**: `IExternalCommand.Execute` opens a modal WPF `ShowDialog()`, so UI commands and model writes share that thread.
+End-to-end path from Revit load to batch write. All of this runs on the **Revit API thread**: `IExternalCommand.Execute` shows the WPF window and blocks with `Dispatcher.PushFrame` (not `ShowDialog` — Revit 2026 treats `Hide()` during `PickObjects` as closing a modal dialog). UI commands and model writes share that thread.
 
 ## Launch
 

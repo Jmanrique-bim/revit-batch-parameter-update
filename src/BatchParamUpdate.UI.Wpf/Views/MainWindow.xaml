@@ -77,9 +77,8 @@
                 CornerRadius="6"
                 Padding="14">
           <StackPanel>
-            <Expander x:Name="CurrentValueBanner"
-                      Header="Current values"
-                      IsExpanded="False"
+            <Expander Header="Current values"
+                      IsExpanded="True"
                       Margin="0,0,0,8"
                       Visibility="{Binding HasCurrentValueSummary, Converter={StaticResource BooleanToVisibilityConverter}}">
               <TextBlock TextWrapping="Wrap"

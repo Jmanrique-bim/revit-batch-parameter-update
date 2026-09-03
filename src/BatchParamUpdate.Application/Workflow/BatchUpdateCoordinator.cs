@@ -158,15 +158,51 @@ public sealed class BatchUpdateCoordinator
     public void Complete()
     {
         var from = _session.State;
-        if (_session.State is SessionState.AwaitingReplacementValue && _batchRan)
+        var canRun = State.Target is not null
+            && !string.IsNullOrWhiteSpace(State.NewValue)
+            && from == SessionState.AwaitingReplacementValue;
+
+        if (from is SessionState.AwaitingReplacementValue && _batchRan)
             _session.TransitionTo(SessionState.Completed);
-        else if (_session.State is not SessionState.Completed
+        else if (from is not SessionState.Completed
                  and not SessionState.Blocked
                  and not SessionState.Cancelled)
             _session.TransitionTo(SessionState.Cancelled);
 
         EmitStateChange(from, "close");
-        _observer.On(new WorkflowEvent.SessionEnded(_session.State));
+        _observer.On(new WorkflowEvent.SessionEnded(_session.State)
+        {
+            Why = CloseWhy(from, canRun),
+            CanRun = canRun,
+            BatchRan = _batchRan,
+            HasTarget = State.Target is not null,
+            Parameter = State.Target?.Name,
+            HasValue = !string.IsNullOrWhiteSpace(State.NewValue),
+            Value = State.NewValue,
+            Scope = State.Scope.ElementRefs.Count,
+            Origin = State.Scope.Origin,
+            Candidates = Candidates.Candidates.Count,
+            LastError = LastError
+        });
+    }
+
+    // ponytail: one close-line instead of WPF CanExecute polls. "can-run-never-clicked"
+    // means the model was ready and the host never invoked Run (Revit 2026 CommandManager).
+    private string CloseWhy(SessionState from, bool canRun)
+    {
+        if (_batchRan)
+            return "batch-ran";
+        if (from == SessionState.Blocked)
+            return LastError is { } blocked ? $"blocked:{blocked}" : "blocked";
+        if (!State.HasScope)
+            return "empty-scope";
+        if (State.Target is null)
+            return "no-parameter";
+        if (string.IsNullOrWhiteSpace(State.NewValue))
+            return "empty-value";
+        if (canRun)
+            return "can-run-never-clicked";
+        return "cancelled";
     }
 
     private void Block(ErrorCode code)

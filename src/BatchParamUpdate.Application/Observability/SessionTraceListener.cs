@@ -71,7 +71,23 @@ public sealed class SessionTraceListener : IWorkflowObserver
 
             case WorkflowEvent.SessionEnded e:
                 Record(new SessionEnd(_identity.SessionId, DateTimeOffset.UtcNow, e.FinalState));
-                _logger.Info(Summarize(e.FinalState));
+                _logger.Info(SessionTrace.Line(
+                    "ui",
+                    "run",
+                    "close",
+                    ("why", e.Why),
+                    ("canRun", e.CanRun),
+                    ("batchRan", e.BatchRan),
+                    ("session", e.FinalState),
+                    ("hasTarget", e.HasTarget),
+                    ("param", e.Parameter),
+                    ("hasValue", e.HasValue),
+                    ("value", e.Value),
+                    ("scope", e.Scope),
+                    ("origin", e.Origin),
+                    ("candidates", e.Candidates),
+                    ("lastError", e.LastError)));
+                _logger.Info(Summarize(e.FinalState, e.Why));
                 _logger.CloseSession();
                 break;
         }
@@ -114,10 +130,12 @@ public sealed class SessionTraceListener : IWorkflowObserver
             _identity.SessionId, DateTimeOffset.UtcNow, result.UpdatedCount, skipped, byCategory);
     }
 
-    private string Summarize(SessionState finalState)
+    private string Summarize(SessionState finalState, string why)
         => _lastBatch is { } b
             ? $"Session {finalState}: updated {b.UpdatedCount}, skipped {b.Skips.Count}."
-            : $"Session ended in {finalState}";
+            : string.IsNullOrEmpty(why)
+                ? $"Session ended in {finalState}"
+                : $"Session ended in {finalState}: {why}";
 
     private void Record(MetricsRecord record)
     {

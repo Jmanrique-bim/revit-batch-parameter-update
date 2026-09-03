@@ -106,5 +106,26 @@ public sealed class BatchUpdateCoordinatorTests
         h.Coordinator.Complete();
 
         Assert.Equal(SessionState.Cancelled, h.Coordinator.Step);
+        Assert.Contains(h.Logger.Lines, l => l.Contains("why=empty-scope", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Complete_WhenReadyButNeverRan_LogsCanRunNeverClicked()
+    {
+        var h = new CoordinatorHarness();
+        h.WithDiscovered("Mark");
+        h.WithPreExisting(new ElementRef("1", "Walls"));
+        h.Coordinator.EstablishSelection();
+        h.Coordinator.ChooseParameter(h.Coordinator.Candidates.Candidates[0]);
+        h.Coordinator.SetValue("test 1");
+
+        h.Coordinator.Complete();
+
+        Assert.Equal(SessionState.Cancelled, h.Coordinator.Step);
+        Assert.Contains(
+            h.Logger.Lines,
+            l => l.Contains("why=can-run-never-clicked", StringComparison.Ordinal)
+                 && l.Contains("canRun=true", StringComparison.Ordinal)
+                 && l.Contains("param=Mark", StringComparison.Ordinal));
     }
 }

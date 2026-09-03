@@ -28,5 +28,18 @@ public abstract record WorkflowEvent
 
     public sealed record StateChanged(SessionState From, SessionState To, string Cause) : WorkflowEvent;
 
-    public sealed record SessionEnded(SessionState FinalState) : WorkflowEvent;
+    public sealed record SessionEnded(SessionState FinalState) : WorkflowEvent
+    {
+        public string Why { get; init; } = "";
+        public bool CanRun { get; init; }
+        public bool BatchRan { get; init; }
+        public bool HasTarget { get; init; }
+        public string? Parameter { get; init; }
+        public bool HasValue { get; init; }
+        public string? Value { get; init; }
+        public int Scope { get; init; }
+        public SelectionOrigin Origin { get; init; }
+        public int Candidates { get; init; }
+        public ErrorCode? LastError { get; init; }
+    }
 }

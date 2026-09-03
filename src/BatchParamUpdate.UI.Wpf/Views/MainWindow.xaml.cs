@@ -18,7 +18,6 @@ public partial class MainWindow
         ParameterPanel.DataContext = vm.Discovery;
         AdvanceErrorBanner.DataContext = vm;
         ReplacementPanel.DataContext = vm.Replacement;
-        CurrentValueBanner.DataContext = vm.Discovery;
         ExecutionProgress.DataContext = vm.Execution;
         SummaryPanel.DataContext = vm.Summary;
     }

@@ -104,6 +104,35 @@ public sealed class SessionTraceListenerTests
     }
 
     [Fact]
+    public void SessionEnded_WritesCloseDiagnosisLine()
+    {
+        var (listener, _, logger) = NewListener();
+
+        listener.On(new SessionEnded(SessionState.Cancelled)
+        {
+            Why = "can-run-never-clicked",
+            CanRun = true,
+            HasTarget = true,
+            Parameter = "Mark",
+            HasValue = true,
+            Value = "test 1",
+            Scope = 26,
+            Origin = SelectionOrigin.ManualPick,
+            Candidates = 12
+        });
+
+        Assert.Contains(
+            logger.Lines,
+            l => l.StartsWith("INFO ui\trun\tclose\t", StringComparison.Ordinal)
+                 && l.Contains("why=can-run-never-clicked", StringComparison.Ordinal)
+                 && l.Contains("canRun=true", StringComparison.Ordinal)
+                 && l.Contains("param=Mark", StringComparison.Ordinal)
+                 && l.Contains("hasValue=true", StringComparison.Ordinal)
+                 && l.Contains("origin=ManualPick", StringComparison.Ordinal));
+        Assert.Contains(logger.Lines, l => l.Contains("Session ended in Cancelled: can-run-never-clicked"));
+    }
+
+    [Fact]
     public void RecorderFailure_IsSwallowed_AndLogsSessionRecordFailed()
     {
         var recorder = new FakeSessionRecorderPort { ThrowOnRecord = new IOException("disk full") };

@@ -21,7 +21,12 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         _coordinator = coordinator;
         _execution = execution;
         _summary = summary;
-        RunCommand = new RelayCommand(Run, () => CanRun);
+        // ponytail: CanExecute stays true. After Revit 2026 PickObjects (Finish/Cancel),
+        // CommandManager is dead and Button.IsEnabledCore ANDs a stale CanExecute cache,
+        // so gating Run here keeps the button off even when CanRun is true. IsEnabled={CanRun}
+        // is the only gate; CommandManager.InvalidateRequerySuggested is the upgrade if a
+        // future host keeps RequerySuggested alive across pick.
+        RunCommand = new RelayCommand(Run);
     }
 
     public string NewValue
@@ -47,6 +52,28 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
         && !string.IsNullOrWhiteSpace(NewValue)
         && _coordinator.Step == SessionState.AwaitingReplacementValue;
 
+    public bool HasCurrentValueSummary => _coordinator.State.Target is not null;
+
+    public string CurrentValueSummary
+    {
+        get
+        {
+            var target = _coordinator.State.Target;
+            if (target is null)
+                return "";
+
+            var values = target.ObservedValues
+                .Select(v => string.IsNullOrEmpty(v) ? "(empty)" : v)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+            if (values.Count == 0)
+                return $"No current value for {target.Name}.";
+            if (values.Count == 1)
+                return $"Current value of {target.Name}: {values[0]}";
+            return $"Current values of {target.Name}: {string.Join(", ", values)}";
+        }
+    }
+
     public ICommand RunCommand { get; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -54,11 +81,15 @@ public sealed class ReplacementValueViewModel : INotifyPropertyChanged
     public void NotifyCanRun()
     {
         OnPropertyChanged(nameof(CanRun));
-        (RunCommand as RelayCommand)?.RaiseCanExecuteChanged();
+        OnPropertyChanged(nameof(HasCurrentValueSummary));
+        OnPropertyChanged(nameof(CurrentValueSummary));
     }
 
     private void Run()
     {
+        if (!CanRun)
+            return;
+
         _execution.IsExecuting = true;
         try
         {

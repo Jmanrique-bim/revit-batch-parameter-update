@@ -32,5 +32,5 @@ Purpose: produce a valid `SelectionContext` (one or more `ElementRef`s plus a `S
 
 ## Constraints
 
-- `PickObjects` must run on the Revit API thread (it does: modal `ShowDialog` on `Execute`). Revit cannot pick through a modal WPF window, hence the hide/show.
-- The hide/show breaks WPF `CommandManager` requery, so **Run update** raises `CanExecuteChanged` explicitly — see `HOW_TO_MVVM.md`.
+- `PickObjects` must run on the Revit API thread (it does: `Show` + `PushFrame` on `Execute`). Revit cannot pick through the WPF window, hence the hide/show. Do not use `ShowDialog` — `Hide()` ends that modal loop on Revit 2026.
+- The hide/show breaks WPF `CommandManager` requery. **Run update** therefore does not gate `ICommand.CanExecute`; `IsEnabled` binds `CanRun` instead — see `HOW_TO_MVVM.md`.

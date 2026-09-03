@@ -12,7 +12,7 @@ One WPF window. A `MainViewModel` owns six child view-models; `MainWindow.Bind(M
 
 ## Who talks to whom
 
-`CompositionRoot` builds the `BatchUpdateCoordinator` and the view-models, then `MainViewModel`. Child view-models **never reference each other** — they read `coordinator.State` (`WorkflowState`: `Scope`, `Target`, `NewValue`) and call coordinator methods. `MainViewModel` is the single subscriber to `coordinator.Changed`; on each change it refreshes the children (`Select.NotifyScopeChanged`, `Discovery.RefreshFromState`, `Replacement.NotifyCanRun`) and re-exposes `ErrorMessage`.
+`CompositionRoot` builds the `BatchUpdateCoordinator` and the view-models, then `MainViewModel`. Child view-models **never reference each other** — they read `coordinator.State` (`WorkflowState`: `Scope`, `Target`, `NewValue`) and call coordinator methods. `MainViewModel` is the single subscriber to `coordinator.Changed`; on each change it refreshes the children (`Select.NotifyScopeChanged`, `Replacement.NotifyCanRun`) and re-exposes `ErrorMessage`.
 
 ## Bind map
 
@@ -20,9 +20,9 @@ One WPF window. A `MainViewModel` owns six child view-models; `MainWindow.Bind(M
 |---|---|
 | Select Elements + empty banner | `SelectElementsViewModel` |
 | Search box | `SharedSearchViewModel` |
-| Parameter list, current-values expander | `ParameterDiscoveryViewModel` |
+| Parameter list | `ParameterDiscoveryViewModel` |
 | Advance / block error banner | `MainViewModel` (`ErrorMessage`) |
-| Replacement value + Run update | `ReplacementValueViewModel` |
+| Replacement value, current-values expander, Run update | `ReplacementValueViewModel` |
 | Progress bar | `BatchExecutionViewModel` (`Done` / `Total`) |
 | Summary (headline, paged skip report, export) | `BatchSummaryViewModel` |
 
@@ -33,7 +33,7 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 1. `SelectElementsCommand` → hide window → `PromptManualSelection` → show window → `coordinator.AdoptManualSelection`.
 2. Search `Text` → `TextChanged` → `ParameterDiscoveryViewModel.RefreshFilters`; `MainViewModel` records the search via `coordinator.RecordSearch`.
 3. Selecting a parameter → `coordinator.ChooseParameter` → `DiscoverParametersUseCase.Choose`. Blocked with `ErrorCode.EmptySelection` if the scope is empty.
-4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue`). `RelayCommand.RaiseCanExecuteChanged` covers the Revit host: `CommandManager` does not requery after `Hide` + `PickObjects` + `Show`.
+4. **Run update** binds `IsEnabled` to `CanRun` (chosen target + non-whitespace value + `AwaitingReplacementValue`). The command is always executable: after Revit 2026 `PickObjects` (Finish/Cancel), `CommandManager` does not requery and a stale `CanExecute=false` would keep the button off.
 5. `Run()` sets `IsExecuting`, calls `coordinator.Run(new DispatcherPumpProgress(...))`, then `BatchSummaryViewModel.Show`.
 
 ## Progress bar
@@ -46,4 +46,4 @@ View-models implement `INotifyPropertyChanged`. They call the coordinator / Appl
 
 ## Constraint
 
-The window is modal (`ShowDialog` on the Revit command). Keep pick/write on that thread; hide the window only for `PickObjects`.
+The window is shown with `Show` + `PushFrame` (not `ShowDialog`). Keep pick/write on that thread; hide the window only for `PickObjects`.
