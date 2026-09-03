@@ -8,6 +8,15 @@ Revit add-in that batch-writes one writable **text instance** parameter across a
 
 Supported hosts: **Autodesk Revit 2025 and 2026** only. The installer never offers Install/Update/Uninstall for any other year.
 
+## Download
+
+Official binary is the GitHub Release asset (HTTPS, versioned). Do not use Drive, WeTransfer, or a raw git blob.
+
+- [Download BatchParamUpdate-win-Setup.exe](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest/download/BatchParamUpdate-win-Setup.exe)
+- [Release notes and SHA256](https://github.com/Jmanrique-bim/revit-batch-parameter-update/releases/latest)
+
+Per-user install into `%APPDATA%\Autodesk\Revit\Addins\{year}` — no administrator rights.
+
 ## How it works
 
 Hexagonal (ports and adapters) inside the Revit process, plus MVVM for the WPF window.
